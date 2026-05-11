@@ -60,10 +60,13 @@ export default function ClipViewer({ clip, onExitClip, ssctls }: ClipViewerProps
     };
 
     const mute = () => {
-        if (volume != 0)
-            setVolume(0)
-        else
-            setVolume(100)
+        if (volume != 0) {
+            setVolume(0);
+            playerRef.current!.volume = 0;
+        } else {
+            setVolume(1);
+            playerRef.current!.volume = 1;
+        }
     }
 
     return (
@@ -184,7 +187,7 @@ export default function ClipViewer({ clip, onExitClip, ssctls }: ClipViewerProps
                         </button>
                         <button
                             className="px-10 py-2 bg-mocha-blue text-mocha-base font-semibold rounded-lg transition-all disabled:opacity-50"
-                            disabled={!(trimLeft != 0 && trimRight != clip.duration)}
+                            disabled={trimLeft == 0 && trimRight == clip.duration}
                             onClick={() => {
                                 invoke("trim_clip", { clip, start: trimLeft, end: trimRight }).then((res) => {
                                     if (res) ssctls();
