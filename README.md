@@ -1,6 +1,8 @@
 # clippi
 
-a lightweight game clipping app for windows
+a lightweight game clipping* app for windows
+
+*the clipping part is coming soon, only records full sessions for now
 
 ## features
 
