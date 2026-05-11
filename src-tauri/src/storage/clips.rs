@@ -137,7 +137,7 @@ pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData) {
         
         fs::create_dir_all(&thumbnail).unwrap();
 
-        thumbnail.push(clip_filename.to_string_lossy().to_string() + ".jpg");
+        thumbnail.push(new_path.file_name().unwrap().to_string_lossy().to_string() + ".jpg");
 
         ffmpeg::ffmpeg::extract_middle_frame(&new_path, &thumbnail).expect("Failed to get thumbnail");
         
