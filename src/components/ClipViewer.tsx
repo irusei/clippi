@@ -167,6 +167,16 @@ export default function ClipViewer({ clip, onExitClip, ssctls }: ClipViewerProps
                         onMouseDown={(e) => { e.stopPropagation(); setIsDragging('right'); }}
                         hidden={false}
                     />
+
+                    {clip.bookmarks.map((bookmark_time) => (
+                        <TimelineMarker
+                            label="BOOKMARK"
+                            time={bookmark_time / 1000}
+                            duration={clip.duration}
+                            colorClass="bg-mocha-green"
+                            hidden={true}
+                        />
+                    ))}
                 </div>
 
                 <div className="flex items-center justify-between px-2 py-3">

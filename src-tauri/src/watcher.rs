@@ -1,7 +1,5 @@
-use std::{collections::HashMap};
-
 use serde::Deserialize;
-use wmi::{Variant, WMIConnection};
+use wmi::{WMIConnection};
 
 use crate::{detector::detector, recorder::recorder::{RecordingSettings, record}, storage::{clips::store_clip, settings::{get_clipping_folder, get_settings}}, windows_utils::{get_titles, wait_for_window}};
 
@@ -55,8 +53,8 @@ fn handle_process(proc: Process) {
 
                         move || {
                             if let Err(e) = record(w_name, &detected_game, recorder_settings,
-                                Box::new(move |clip_path| {
-                                    store_clip(clip_path, detected_game_cloned);
+                                Box::new(move |(clip_path, bookmark_times)| {
+                                    store_clip(clip_path, detected_game_cloned, bookmark_times);
                                 })
                             ) {
                                 eprintln!("An error occurred while recording: {:?}", e);

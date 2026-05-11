@@ -1,8 +1,8 @@
+use device_query::{DeviceQuery, Keycode, device_state};
 use libobs_simple::{
     output::{simple::{HardwarePreset, ObsContextSimpleExt, X264Preset}},
     sources::{ObsObjectUpdater, ObsSourceBuilder, windows::{ObsGameCaptureMode, ObsWindowCaptureMethod}},
 };
-use crossbeam_channel::{unbounded, Receiver, Sender};
 use libobs_wrapper::{
     context::ObsContext,
     data::{output::{ObsOutputTrait}, video::ObsVideoInfoBuilder},
@@ -15,7 +15,8 @@ use std::{path::{PathBuf}, time::{SystemTime, UNIX_EPOCH}};
 
 use crate::{storage::games::DetectedGameData, windows_utils::{find_window_by_exe, wait_for_window}};
 
-type OnFinishedCallback = Box<dyn FnOnce(PathBuf) + Send>;
+// this Vec<u128> is storing bookmarks in ms since started recording, TODO: this is ugly. when the replay buffer will be made this needs to be taken into a more convenient location
+type OnFinishedCallback = Box<dyn FnOnce((PathBuf, Vec<u128>)) + Send>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum VodEncoder {
@@ -176,31 +177,54 @@ pub fn record(
     let mut output = output_builder.build()?;
     output.start()?;
 
-    let (tx, rx): (Sender<()>, Receiver<()>) = unbounded();
+    let started_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("time went backwards").as_millis();
+
 
     let window_exe = window_exe_name.clone();
-    std::thread::spawn(move || {
-        loop {
-            std::thread::sleep(std::time::Duration::from_millis(500));
-            match libobs_window_helper::get_all_windows(WindowSearchMode::IncludeMinimized) {
-                Ok(windows) => {
-                    if find_window_by_exe(&windows, &window_exe).is_none() {
-                        let _ = tx.send(());
-                        break;
-                    }
-                }
-                Err(_) => break,
-            }
-        }
-    });
 
-    rx.recv().unwrap();
+    // recording loop, wait for exit
+    let device_state = device_state::DeviceState::new();
+    let mut f8_debounce = false;
+    let mut bookmarks: Vec<u128> = Vec::new();
+
+    loop {
+        std::thread::sleep(std::time::Duration::from_millis(50));
+
+        // i actually don't know the impact of this on the cpu
+        let keys = device_state.get_keys();
+        let f8_down = keys.contains(&Keycode::F8);
+
+        if f8_down && !f8_debounce {
+            f8_debounce = true;
+            let cur_ms = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("time went backwards").as_millis();
+
+            let difference = cur_ms - started_ms;
+            bookmarks.push(difference);
+
+        } else if !f8_down && f8_debounce {
+            f8_debounce = false;
+        }
+
+        // check if f8 pressed
+        match libobs_window_helper::get_all_windows(WindowSearchMode::IncludeMinimized) {
+            Ok(windows) => {
+                if find_window_by_exe(&windows, &window_exe).is_none() {
+                    break;
+                }
+            }
+            Err(_) => break,
+        }
+    }
 
     output.stop()?;
     let path = PathBuf::from(output_path);
     println!("saved to {:?}", path);
 
-    on_finished(path);
+    on_finished((path, bookmarks));
 
     Ok(())
 }

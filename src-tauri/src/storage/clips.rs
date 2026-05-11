@@ -12,6 +12,8 @@ pub struct Clip {
     pub game: DetectedGameData,
     pub size: u64,
     pub thumbnail: String,
+    #[serde(default)]
+    pub bookmarks: Vec<u128>
 }
 
 static CLIPS: LazyLock<Mutex<Vec<Clip>>> = LazyLock::new(|| {
@@ -59,7 +61,7 @@ fn save_to_file() {
     // send to app
     send_clips();
 }
-pub fn store_clip(clip_path: PathBuf, game_data: DetectedGameData) {
+pub fn store_clip(clip_path: PathBuf, game_data: DetectedGameData, bookmark_times: Vec<u128>) {
     // prepare move
     let clip_filename = clip_path.file_name().expect("Failed to get filename?");
     let mut new_path = get_clipping_folder();
@@ -100,6 +102,7 @@ pub fn store_clip(clip_path: PathBuf, game_data: DetectedGameData) {
             game: game_data,
             size: file_size,
             thumbnail: thumbnail.to_string_lossy().to_string(),
+            bookmarks: bookmark_times
         });
     }
     save_to_file();
@@ -148,6 +151,7 @@ pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData) {
                 game: game_data,
                 size: file_size,
                 thumbnail: thumbnail.to_string_lossy().to_string(),
+                bookmarks: Vec::new() // reset bookmarks, maybe it's better if we don't?
             });
 
         }

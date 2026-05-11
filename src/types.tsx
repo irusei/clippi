@@ -13,6 +13,7 @@ export interface VodClip {
   game: DetectedGame;
   size: number;
   thumbnail: string;
+  bookmarks: number[];
 }
 
 export type VodEncoder = "X264" | "H264" | "HEVC" | "AV1";

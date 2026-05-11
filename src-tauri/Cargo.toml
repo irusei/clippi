@@ -37,9 +37,8 @@ libobs-wrapper = { git = "https://github.com/irusei/clippi-libobs-rs.git", packa
 libobs-window-helper = { git = "https://github.com/irusei/clippi-libobs-rs.git", package = "libobs-window-helper" }
 
 tokio = { version = "1", features = ["full"] }
-
-crossbeam-channel = "0.5.15"
 wmi = "0.18.4"
 dirs = "6.0.0"
 regex = "1.12.3"
+device_query = "4.0.1"
 
