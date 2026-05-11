@@ -73,23 +73,9 @@ fn handle_process(proc: Process) {
 pub async fn init() {
     tauri::async_runtime::spawn(async {
         let wmi_con = WMIConnection::new().expect("WMI Connection Failed");
-        let raw_results: Vec<HashMap<String, Variant>> = wmi_con.raw_query("SELECT Name, ProcessId FROM Win32_Process").unwrap();
 
         // get existing processes
-        let processes: Vec<Process> = raw_results.into_iter().filter_map(|map| {
-            let name = match map.get("Name") {
-                Some(wmi::Variant::String(s)) => s.clone(),
-                _ => return None,
-            };
-
-            let pid = match map.get("ProcessId") {
-                Some(wmi::Variant::I4(p)) => *p as u32,
-                Some(wmi::Variant::UI4(p)) => *p,
-                _ => return None,
-            };
-
-            Some(Process { name, process_id: pid })
-        }).collect();
+        let processes: Vec<Process> = wmi_con.raw_query("SELECT Name, ProcessId FROM Win32_Process").unwrap();
 
         for proc in processes {
             handle_process(proc);
