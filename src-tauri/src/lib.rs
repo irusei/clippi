@@ -27,6 +27,13 @@ fn send_clips() {
     }
 }
 
+fn announce_current_game(game: Option<&DetectedGameData>) {
+    let handle = APP_HANDLE.lock().unwrap();
+    if let Some(handle) = &*handle {
+        handle.emit("set_current_game", game).unwrap();
+    }
+}
+
 #[tauri::command]
 fn get_clips(handle: AppHandle) -> Vec<Clip> {
     *APP_HANDLE.lock().unwrap() = Some(handle);

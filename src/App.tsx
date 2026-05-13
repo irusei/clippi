@@ -1,9 +1,11 @@
 import { Gamepad2Icon, Settings, VideoIcon } from "lucide-react";
 import "./App.css"
 import ClipTab from "./tabs/ClipTab";
-import { ReactElement, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import SettingTab from "./tabs/SettingTab";
 import GameTab from "./tabs/GameTab";
+import { DetectedGame } from "./types";
+import { listen } from "@tauri-apps/api/event";
 
 document.addEventListener('contextmenu', (e) => {
   e.preventDefault();
@@ -43,7 +45,7 @@ interface SidebarProps {
 
 function Sidebar({currentTab, setCurrentTab}: SidebarProps) {
   return (
-    <div className="flex flex-col w-16 h-screen bg-mocha-base">
+    <div className="z-10 flex flex-col w-16 h-screen bg-mocha-base border-r border-mocha-crust/50">
       <SidebarButton selected={currentTab === Tab.Clips} icon={<VideoIcon className="w-full h-full"/>} onClick={() => setCurrentTab(Tab.Clips)}/>
       <SidebarButton selected={currentTab === Tab.Games} icon={<Gamepad2Icon className="w-full h-full"/>} onClick={() => setCurrentTab(Tab.Games)}/>
       <SidebarButton selected={currentTab === Tab.Settings} icon={<Settings className="w-full h-full"/>} onClick={() => setCurrentTab(Tab.Settings)}/>
@@ -53,13 +55,36 @@ function Sidebar({currentTab, setCurrentTab}: SidebarProps) {
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<Tab>(Tab.Clips);
+  const [currentGame, setCurrentGame] = useState<DetectedGame | null>(null);
+
+  // current game listener
+  useEffect(() => { 
+    const unlisten = listen("set_current_game", (event) => {
+      let game = event.payload as DetectedGame | null;
+
+      // todo: timestamps, estimated size ig
+      setCurrentGame(game);
+    });
+    return () => {
+      unlisten.then((ul) => ul());
+    }
+  }, []);
 
   return (
-    <div className="flex flex-row h-screen w-screen">
+    <div className="flex flex-row h-screen w-screen relative">
       <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab}/>
       {currentTab === Tab.Clips && <ClipTab/>}
       {currentTab === Tab.Games && <GameTab/>}
       {currentTab === Tab.Settings && <SettingTab/>}
+
+      {/* now playing game panel */}
+      {currentGame != null && 
+        <div className="w-full absolute bottom-0 h-10 bg-mocha-base items-center text-center flex p-4 gap-x-2 justify-end border-t border-mocha-crust/50">
+          <img className="h-5 w-5" src={currentGame.icon ?? ""}/>
+          <p className="text-mocha-text">{currentGame.name}</p>
+            <div className="h-2 w-2 rounded-xl bg-mocha-green"/>
+        </div>
+      }
     </div>
   )
 }

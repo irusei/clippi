@@ -4,3 +4,7 @@ export const formatTime = (time: number) => {
     const ms = Math.floor((time % 1) * 1000);
     return `${mins}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
 };
+
+export const parseSize = (size: number) => {
+    return (size / 1048576).toFixed(2) + "MB";
+}

@@ -1,22 +1,13 @@
 import { Play, Trash } from "lucide-react";
 import { VodClip } from "../types";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { formatTime, parseSize } from "../utils";
 
 interface ClipProps {
     clip: VodClip
     onClick: () => void;
 }
 
-function parseSize(size: number) {
-    return (size / 1048576).toFixed(2) + "MB";
-}
-
-function parseDuration(seconds: number) {
-    let mins = Math.floor(seconds / 60);
-    let secs = seconds % 60;
-
-    return `${mins < 10 ? ("0" + mins) : mins}:${secs < 10 ? ("0" + secs) : secs}`;
-}
 export default function Clip({ clip, onClick}: ClipProps) {
     return (
         <div className={"flex flex-col rounded-md w-80 h-60 bg-mocha-base border-mocha-base border-2 hover:cursor-pointer overflow-hidden"} onClick={onClick}>
@@ -24,7 +15,7 @@ export default function Clip({ clip, onClick}: ClipProps) {
                 <img className={"w-full h-full absolute"} src={convertFileSrc(clip.thumbnail)}/>
                 <Play className={"z-10 w-8 h-8 text-mocha-text"}/>
                 <div className={"z-10 absolute top-20 right-2 w-15 h-8 bg-mocha-base items-center flex justify-center text-mocha-text rounded-md"}>
-                    {parseDuration(clip.duration)}
+                    {formatTime(clip.duration).slice(0, -4)}
                 </div>
             </div>
             <div className={"p-2 px-4 w-full text-mocha-text"}>

@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use wmi::{WMIConnection};
 
-use crate::{detector::detector, recorder::recorder::{RecordingSettings, record}, storage::{clips::store_clip, settings::{get_clipping_folder, get_settings}}, windows_utils::{get_titles, wait_for_window}};
+use crate::{announce_current_game, detector::detector, recorder::recorder::{RecordingSettings, record}, storage::{clips::store_clip, settings::{get_clipping_folder, get_settings}}, windows_utils::{get_titles, wait_for_window}};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename = "__InstanceCreationEvent")]
@@ -46,6 +46,9 @@ fn handle_process(proc: Process) {
                         capture_mic: settings.capture_mic
                     };
 
+                    // announce to frontend that we're playin a game
+                    announce_current_game(Some(&detected_game));
+
                     std::thread::spawn({
                         let w_name = w_name.clone();         
                         let recorder_settings = recorder_settings.clone();
@@ -55,6 +58,7 @@ fn handle_process(proc: Process) {
                             if let Err(e) = record(w_name, &detected_game, recorder_settings,
                                 Box::new(move |(clip_path, bookmark_times)| {
                                     store_clip(clip_path, detected_game_cloned, bookmark_times);
+                                    announce_current_game(None); // finished gaming
                                 })
                             ) {
                                 eprintln!("An error occurred while recording: {:?}", e);
