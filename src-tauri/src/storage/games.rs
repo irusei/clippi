@@ -44,11 +44,15 @@ pub fn delete_game(game: DetectedGameData) {
 }
 
 pub fn edit_game(old_game: DetectedGameData, new_game: DetectedGameData) {
-    let mut locked_games = GAMES.lock().unwrap();
+    {
+        let mut locked_games = GAMES.lock().unwrap();
 
-    if let Some(game) = locked_games.iter_mut().find(|game| **game == old_game) {
-        *game = new_game;
+        if let Some(game) = locked_games.iter_mut().find(|game| **game == old_game) {
+            *game = new_game;
+        }
     }
+
+    save_games_to_file();
 }
 
 fn check_for_diff(base_games: Vec<DetectedGameData>, games_file_content: Vec<DetectedGameData>) -> Vec<DetectedGameData> {
