@@ -37,7 +37,7 @@ pub fn add_game(game: DetectedGameData) {
 pub fn delete_game(game: DetectedGameData) {
     {
         let mut games = GAMES.lock().unwrap();
-        games.retain(|game_data| !game_data.name.eq(&game.name) && !game_data.executables.eq(&game.executables));
+        games.retain(|game_data| !game_data.eq(&game));
         games.sort_by(|a, b| a.name.cmp(&b.name));
     }
     save_games_to_file();

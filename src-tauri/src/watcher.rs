@@ -57,7 +57,7 @@ fn handle_process(proc: Process) {
                         move || {
                             if let Err(e) = record(w_name, &detected_game, recorder_settings,
                                 Box::new(move |(clip_path, bookmark_times)| {
-                                    store_clip(clip_path, detected_game_cloned, bookmark_times);
+                                    store_clip(crate::storage::clips::ClipType::Recording, clip_path, detected_game_cloned, bookmark_times);
                                     announce_current_game(None); // finished gaming
                                 })
                             ) {

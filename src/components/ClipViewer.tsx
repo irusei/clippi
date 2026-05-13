@@ -10,10 +10,10 @@ import TimelineMarker from "./TimelineMarker";
 interface ClipViewerProps {
     clip: VodClip;
     onExitClip: () => void;
-    ssctls: () => void;
+    setSelectedClipToLastClip: () => void;
 }
 
-export default function ClipViewer({ clip, onExitClip, ssctls }: ClipViewerProps) {
+export default function ClipViewer({ clip, onExitClip, setSelectedClipToLastClip }: ClipViewerProps) {
     const playerRef = useRef<HTMLVideoElement | null>(null);
     const timelineRef = useRef<HTMLDivElement | null>(null);
 
@@ -200,7 +200,7 @@ export default function ClipViewer({ clip, onExitClip, ssctls }: ClipViewerProps
                             disabled={trimLeft == 0 && trimRight == clip.duration}
                             onClick={() => {
                                 invoke("trim_clip", { clip, start: trimLeft, end: trimRight }).then((res) => {
-                                    if (res) ssctls();
+                                    if (res) setSelectedClipToLastClip();
                                 });
                             }}
                         >

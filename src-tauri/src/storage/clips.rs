@@ -4,8 +4,23 @@ use serde::{Deserialize, Serialize};
 
 use crate::{ffmpeg::{self, ffprobe}, send_clips, storage::{games::DetectedGameData, settings::get_clipping_folder}};
 
+#[derive(Serialize, Deserialize, Clone, Default)]
+pub enum ClipType {
+    #[default]
+    Recording,
+    Clip // trims will be by default clips
+}
+
+fn default_uuid() -> uuid::Uuid {
+    uuid::Uuid::new_v4()
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Clip {
+    #[serde(default = "default_uuid")]
+    pub id: uuid::Uuid,
+    #[serde(default)]
+    pub clip_type: ClipType,
     pub path: PathBuf,
     pub title: String,
     pub duration: u64, 
@@ -61,7 +76,7 @@ fn save_to_file() {
     // send to app
     send_clips();
 }
-pub fn store_clip(clip_path: PathBuf, game_data: DetectedGameData, bookmark_times: Vec<u128>) {
+pub fn store_clip(clip_type: ClipType, clip_path: PathBuf, game_data: DetectedGameData, bookmark_times: Vec<u128>) {
     // prepare move
     let clip_filename = clip_path.file_name().expect("Failed to get filename?");
     let mut new_path = get_clipping_folder();
@@ -96,6 +111,8 @@ pub fn store_clip(clip_path: PathBuf, game_data: DetectedGameData, bookmark_time
     {
         let mut clips_locked = CLIPS.lock().unwrap();
         clips_locked.push(Clip {
+            id: uuid::Uuid::new_v4(),
+            clip_type: clip_type,
             path: new_path,
             title: clip_filename.to_string_lossy().to_string(),
             duration: duration,
@@ -145,6 +162,8 @@ pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData) {
         {
             let mut clips_locked = CLIPS.lock().unwrap();
             clips_locked.push(Clip {
+                id: uuid::Uuid::new_v4(),
+                clip_type: ClipType::Clip,
                 path: new_path.clone(),
                 title: new_path.file_name().unwrap().to_string_lossy().to_string(),
                 duration: duration,

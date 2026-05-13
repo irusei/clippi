@@ -41,4 +41,8 @@ wmi = "0.18.4"
 dirs = "6.0.0"
 regex = "1.12.3"
 device_query = "4.0.1"
+uuid = {
+    version = "1.23.1",
+    features = ["v4"]
+}
 

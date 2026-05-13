@@ -7,6 +7,8 @@ export interface DetectedGame {
 }
 
 export interface VodClip {
+  id: string;
+  clip_type: ClipType;
   path: string;
   title: string;
   duration: number;
@@ -16,6 +18,7 @@ export interface VodClip {
   bookmarks: number[];
 }
 
+export type ClipType = "Recording" | "Clip";
 export type VodEncoder = "X264" | "H264" | "HEVC" | "AV1";
 
 export interface VodSettings {
