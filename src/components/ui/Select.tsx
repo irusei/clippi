@@ -29,7 +29,7 @@ export function Select({ className, disabled, value, onChange, options }: Select
             <button
                 type="button"
                 className={clsx(
-                    "w-full py-2 px-3 rounded-lg flex items-center justify-between text-mocha-text appearance-none cursor-pointer transition-colors bg-mocha-base",
+                    "w-full py-2.5 px-3 rounded-lg flex items-center justify-between text-mocha-text appearance-none cursor-pointer transition-colors bg-mocha-base border border-mocha-base",
                     disabled
                         ? "opacity-50 cursor-not-allowed pointer-events-none"
                         : "hover:border-mocha-mauve hover:border focus:outline-mocha-mauve focus:outline-none focus:ring-1 focus:ring-mocha-mauve/50",
