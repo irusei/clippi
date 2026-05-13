@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react"
-import { VodEncoder, VodSettings } from "../types";
+import { VodSettings } from "../types";
 import { Switch } from "../components/ui/Switch";
 import { SettingsContainer } from "../components/ui/SettingsContainer";
 import Input from "../components/ui/Input";
