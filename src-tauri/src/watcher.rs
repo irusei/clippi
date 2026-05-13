@@ -1,7 +1,9 @@
+use std::sync::{LazyLock, Mutex};
+
 use serde::Deserialize;
 use wmi::{WMIConnection};
 
-use crate::{announce_current_game, detector::detector, recorder::recorder::{RecordingSettings, record}, storage::{clips::store_clip, settings::{get_clipping_folder, get_settings}}, windows_utils::{get_titles, wait_for_window}};
+use crate::{announce_current_game, detector::detector, integrations::discord::rpc, recorder::recorder::{RecordingSettings, record}, storage::{clips::store_clip, games::DetectedGameData, settings::{get_clipping_folder, get_settings}}, windows_utils::{get_titles, wait_for_window}};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename = "__InstanceCreationEvent")]
@@ -17,6 +19,18 @@ struct Process {
     process_id: u32,
 }
 
+static CURRENT_GAME: LazyLock<Mutex<Option<DetectedGameData>>> = LazyLock::new(|| {
+    Mutex::new(None)
+});
+
+pub fn get_current_game() -> Option<DetectedGameData> {
+    return CURRENT_GAME.lock().unwrap().clone();
+}
+
+pub fn set_current_game(current_game: Option<DetectedGameData>) {
+    *CURRENT_GAME.lock().unwrap() = current_game;
+}
+
 fn handle_process(proc: Process) {
     let filename = proc.name;
     let is_game: bool = detector::process_exists(&filename);
@@ -26,10 +40,7 @@ fn handle_process(proc: Process) {
         match wait_for_window(&filename, 45) { 
             Ok(_) => {
                 let titles = get_titles(proc.process_id);
-                let default_title = String::from("");
-                let window_title = titles.get(0).unwrap_or(&default_title);
-                println!("MATCHED WINDOW TITLE: {}", window_title);
-                if let Some(detected_game) = detector::get_detected_game(&filename, window_title) {
+                if let Some(detected_game) = detector::get_detected_game(&filename, &titles) {
                     let w_name = filename.clone();
                     
                     let settings = get_settings();
@@ -54,11 +65,18 @@ fn handle_process(proc: Process) {
                         // announce to frontend that we're playin a game
                         announce_current_game(Some(&detected_game));
 
+                        // discord rpc stuff
+                        set_current_game(Some(detected_game.clone()));
+                        if settings.discord_rpc_enabled {
+                            rpc::set_activity(&detected_game);
+                        }
+
                         move || {
                             if let Err(e) = record(w_name, &detected_game, recorder_settings,
                                 Box::new(move |(clip_path, bookmark_times)| {
-                                    store_clip(crate::storage::clips::ClipType::Recording, clip_path, detected_game_cloned, bookmark_times);
                                     announce_current_game(None); // finished gaming
+                                    rpc::clear_activity();
+                                    store_clip(crate::storage::clips::ClipType::Recording, clip_path, detected_game_cloned, bookmark_times);
                                 })
                             ) {
                                 eprintln!("An error occurred while recording: {:?}", e);

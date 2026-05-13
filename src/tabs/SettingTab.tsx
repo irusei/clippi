@@ -1,21 +1,21 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react"
-import { VodSettings } from "../types";
+import { Settings } from "../types";
 import { Switch } from "../components/ui/Switch";
 import { SettingsContainer } from "../components/ui/SettingsContainer";
 import Input from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
 
 export default function SettingTab() {
-    const [settings, setSettings] = useState<VodSettings | null>(null);
+    const [settings, setSettings] = useState<Settings | null>(null);
 
     useEffect(() => {
         invoke('get_settings').then((res) => {
-            setSettings(res as VodSettings);
+            setSettings(res as Settings);
         });
     }, []);
 
-    const updateSetting = (key: keyof VodSettings, value: any) => {
+    const updateSetting = (key: keyof Settings, value: any) => {
         if (!settings) return;
         const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
@@ -157,6 +157,16 @@ export default function SettingTab() {
                             />
                         </SettingsContainer>
                     </div>
+                </section>
+
+                <section className="flex flex-col gap-4">
+                    <h3 className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">Miscellaneous</h3>
+                    <SettingsContainer title="Discord Rich Presence" description="Enable discord rich presence">
+                        <Switch
+                            checked={settings.discord_rpc_enabled}
+                            onChecked={(value) => updateSetting('discord_rpc_enabled', value)}
+                        />
+                    </SettingsContainer>
                 </section>
             </div>
         </div>

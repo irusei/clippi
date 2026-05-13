@@ -21,12 +21,13 @@ export interface VodClip {
 export type ClipType = "Recording" | "Clip";
 export type VodEncoder = "X264" | "H264" | "HEVC" | "AV1";
 
-export interface VodSettings {
+export interface Settings {
   clip_path: string;
   resolution: [number, number],
   framerate: number,
   bitrate: number,
   encoder: VodEncoder
   capture_desktop_audio: boolean,
-  capture_mic: boolean
+  capture_mic: boolean,
+  discord_rpc_enabled: boolean
 }

@@ -2,13 +2,14 @@ use std::{path::PathBuf, sync::{LazyLock, Mutex}};
 
 use tauri::{AppHandle, Emitter, Manager, menu::{Menu, MenuItem}, tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}};
 
-use crate::{storage::{clips::Clip, games::DetectedGameData, settings::{Settings, get_clipping_folder}}};
+use crate::{integrations::discord::rpc, storage::{clips::Clip, games::DetectedGameData, settings::{Settings, get_clipping_folder}}};
 
 use std::thread::spawn;
 
 pub mod watcher;
 pub mod storage;
 pub mod ffmpeg;
+pub mod integrations;
 pub mod recorder;
 pub mod detector;
 pub mod windows_utils;
@@ -108,9 +109,15 @@ fn edit_game(old_game: DetectedGameData, new_game: DetectedGameData) {
     storage::games::edit_game(old_game, new_game);
 }
 
+#[tauri::command]
+fn get_current_game() -> Option<DetectedGameData> {
+    watcher::get_current_game()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     spawn(|| {
+        rpc::init();    
         watcher::init();
     });
     tauri::Builder::default()
@@ -158,7 +165,7 @@ pub fn run() {
             }
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_clips, open_clip_in_explorer, trim_clip, delete_clip, get_settings, set_settings, get_games, add_game, remove_game, edit_game])
+        .invoke_handler(tauri::generate_handler![get_clips, open_clip_in_explorer, trim_clip, delete_clip, get_settings, set_settings, get_games, add_game, remove_game, edit_game, get_current_game])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -2,7 +2,7 @@ use std::{fs::{self, File, OpenOptions}, io::Write, path::PathBuf, sync::{LazyLo
 
 use serde::{Deserialize, Serialize};
 
-use crate::{recorder::recorder::VodEncoder, storage::clips::reload_clips};
+use crate::{integrations::discord::rpc, recorder::recorder::VodEncoder, storage::clips::reload_clips, watcher::get_current_game};
 
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -18,6 +18,8 @@ pub struct Settings {
     #[serde(default)]
     pub capture_mic: bool,
 
+    #[serde(default)]
+    pub discord_rpc_enabled: bool,
 }
 
 static SETTINGS: LazyLock<Mutex<Settings>> = LazyLock::new(|| {
@@ -53,7 +55,8 @@ fn load_settings_from_file() -> Settings {
                 bitrate: 10000,
                 encoder: VodEncoder::AV1,
                 capture_desktop_audio: false,
-                capture_mic: false
+                capture_mic: false,
+                discord_rpc_enabled: false,
             }
         }
         true => {
@@ -93,6 +96,20 @@ pub fn get_clipping_folder() -> PathBuf {
 }
 
 pub fn set_settings(new_settings: Settings) {
+    // set discord rpc activity instantly
+    let old_settings = get_settings();
+    if new_settings.discord_rpc_enabled != old_settings.discord_rpc_enabled {
+        if !new_settings.discord_rpc_enabled {
+            rpc::clear_activity();
+        } else {
+            if let Some(game) = get_current_game() {
+                rpc::set_activity(&game);
+            } else {
+                rpc::clear_activity();
+            }
+        }
+    }
+
     {
         let mut settings_locked = SETTINGS.lock().unwrap();
         *settings_locked = new_settings;

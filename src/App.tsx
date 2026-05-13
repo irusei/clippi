@@ -6,6 +6,7 @@ import SettingTab from "./tabs/SettingTab";
 import GameTab from "./tabs/GameTab";
 import { DetectedGame } from "./types";
 import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 
 document.addEventListener('contextmenu', (e) => {
   e.preventDefault();
@@ -56,9 +57,16 @@ function Sidebar({currentTab, setCurrentTab}: SidebarProps) {
 export default function App() {
   const [currentTab, setCurrentTab] = useState<Tab>(Tab.Clips);
   const [currentGame, setCurrentGame] = useState<DetectedGame | null>(null);
+  
+  function getCurrentGame() {
+    invoke('get_current_game').then((res) => {
+      setCurrentGame(res as DetectedGame | null);
+    })
+  }
 
   // current game listener
   useEffect(() => { 
+    getCurrentGame();
     const unlisten = listen("set_current_game", (event) => {
       let game = event.payload as DetectedGame | null;
 
@@ -69,7 +77,7 @@ export default function App() {
       unlisten.then((ul) => ul());
     }
   }, []);
-
+  
   return (
     <div className="flex flex-row h-screen w-screen relative">
       <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab}/>
