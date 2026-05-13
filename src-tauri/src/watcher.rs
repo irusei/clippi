@@ -46,13 +46,13 @@ fn handle_process(proc: Process) {
                         capture_mic: settings.capture_mic
                     };
 
-                    // announce to frontend that we're playin a game
-                    announce_current_game(Some(&detected_game));
-
                     std::thread::spawn({
                         let w_name = w_name.clone();         
                         let recorder_settings = recorder_settings.clone();
                         let detected_game_cloned = detected_game.clone();
+
+                        // announce to frontend that we're playin a game
+                        announce_current_game(Some(&detected_game));
 
                         move || {
                             if let Err(e) = record(w_name, &detected_game, recorder_settings,
