@@ -98,7 +98,7 @@ export default function ClipViewer({ clip, onExitClip, setSelectedClipToLastClip
                 <div className="absolute bottom-0 left-0 w-full p-4 bg-linear-to-t from-mocha-base/90 to-transparent">
                     <div className="relative w-full h-1 bg-mocha-surface0 rounded-full mb-3 group cursor-pointer">
                         <div 
-                            className="absolute top-0 left-0 h-full bg-mocha-lavender rounded-full" 
+                            className="absolute top-0 left-0 h-full bg-mocha-mauve rounded-full" 
                             style={{ width: `${(currentTime / clip.duration) * 100}%` }}
                         />
                     </div>
@@ -110,7 +110,7 @@ export default function ClipViewer({ clip, onExitClip, setSelectedClipToLastClip
                             </button>
                             <div className="flex items-center gap-2 group">
                                 {volume == 0 ? <VolumeOff onClick={mute} className="w-5 h-5 cursor-pointer" /> : <Volume2 onClick={mute} className="w-5 h-5 cursor-pointer" />}
-                                <input type="range" min="0" max="1" step="0.1" className="w-16 h-1 accent-mocha-lavender cursor-pointer" value={volume} onChange={e => {
+                                <input type="range" min="0" max="1" step="0.1" className="w-16 h-1 accent-mocha-mauve cursor-pointer" value={volume} onChange={e => {
                                     setVolume(parseFloat(e.target.value)); 
                                     playerRef.current!.volume = parseFloat(e.target.value)
                                 }}/>
@@ -154,7 +154,7 @@ export default function ClipViewer({ clip, onExitClip, setSelectedClipToLastClip
                         label="START"
                         time={trimLeft}
                         duration={clip.duration}
-                        colorClass="bg-mocha-lavender"
+                        colorClass="bg-mocha-mauve"
                         onMouseDown={(e) => { e.stopPropagation(); setIsDragging('left'); }}
                         hidden={false}
                     />
@@ -196,7 +196,7 @@ export default function ClipViewer({ clip, onExitClip, setSelectedClipToLastClip
                             <ChevronRight className="h-4 w-4" /><Scissors className="w-4 h-4"/>
                         </button>
                         <button
-                            className="px-10 py-2 bg-mocha-blue text-mocha-base font-semibold rounded-lg transition-all disabled:opacity-50"
+                            className="px-10 py-2 bg-mocha-mauve hover:bg-mocha-mauve/80 text-mocha-base font-semibold rounded-lg transition-all disabled:opacity-50"
                             disabled={trimLeft == 0 && trimRight == clip.duration}
                             onClick={() => {
                                 invoke("trim_clip", { clip, start: trimLeft, end: trimRight }).then((res) => {

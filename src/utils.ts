@@ -5,6 +5,14 @@ export const formatTime = (time: number) => {
     return `${mins}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
 };
 
-export const parseSize = (size: number) => {
-    return (size / 1048576).toFixed(2) + "MB";
+export const parseSize = (bytes: number) => {
+    let kb = bytes / 1000;
+    let mb = kb / 1000;
+    let gb = mb / 1000;
+
+    if (gb > 1) {
+        return gb.toFixed(2) + "GB";
+    } else {
+        return mb.toFixed(2) + "MB";
+    }
 }

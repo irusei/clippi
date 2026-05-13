@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import Clip from "../components/Clip";
 import ClipViewer from "../components/ClipViewer";
+import { parseSize } from "../utils";
 
 function getSortedUniqueGames(clips: VodClip[]): [DetectedGame, number][] {
   let sortedGames: Map<string, [DetectedGame, number]> = new Map();
@@ -23,8 +24,6 @@ function getSortedUniqueGames(clips: VodClip[]): [DetectedGame, number][] {
       sortedGames.set(clip.game.name, [clip.game, 1]);
     }
   });
-
-  console.log(sortedGames);
 
   return Array.from(sortedGames.values()).sort((a, b) => b[1] - a[1]);
 }
@@ -55,8 +54,6 @@ export default function ClipTab() {
     setUniqueGames(getSortedUniqueGames(clips));
   }, [clips]);
 
-  console.log(uniqueGames);
-
   useEffect(() => { 
     const ul = listen("set_clips", (event) => {
       setClips((event.payload as VodClip[]));
@@ -73,8 +70,11 @@ export default function ClipTab() {
     <div className="bg-mocha-mantle w-full h-full relative">
       {selectedClip === null && 
       <>
-        <div className="px-10 py-2 overflow-y-scroll h-full gap-y-2">
-            <h2 className="text-2xl font-bold text-mocha-text py-4" >Your clips</h2>
+        <div className="px-10 py-8 overflow-y-scroll h-full gap-y-2">
+            <div className="flex flex-row gap-x-3 items-center">
+              <h2 className="text-3xl font-semibold text-mocha-text mb-2">Your clips</h2>
+              {clips.length > 0 && <h2 className="text-lg font-semibold text-mocha-overlay1 mb-2">{parseSize(clips.map((clip) => clip.size).reduce((total_size, cur_size) => total_size + cur_size))}</h2>}
+            </div>
             <div className="overflow-x-auto w-full flex flex-row gap-x-4 py-2 mb-2">
               {uniqueGames.map(([game, count]) => (
                 <div key={game.name} className={`p-2 h-10 flex flex-row space-x-2 bg-mocha-base rounded-lg items-center justify-center cursor-pointer border ${selectedGameName === game.name ? "border-mocha-mauve" : "border-mocha-base/50 hover:border-mocha-mauve/50"}`} 

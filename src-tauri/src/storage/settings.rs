@@ -50,8 +50,8 @@ fn load_settings_from_file() -> Settings {
                 clip_path: video_dir.to_string_lossy().to_string(),
                 resolution: (1920, 1080),
                 framerate: 60,
-                bitrate: 15000,
-                encoder: VodEncoder::HEVC,
+                bitrate: 10000,
+                encoder: VodEncoder::AV1,
                 capture_desktop_audio: false,
                 capture_mic: false
             }
