@@ -15,6 +15,12 @@ fn default_uuid() -> uuid::Uuid {
     uuid::Uuid::new_v4()
 }
 
+#[derive(Clone, Deserialize, Serialize)]
+pub struct Bookmark {
+    pub name: String,
+    pub timestamp: u128,
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Clip {
     #[serde(default = "default_uuid")]
@@ -28,7 +34,9 @@ pub struct Clip {
     pub size: u64,
     pub thumbnail: String,
     #[serde(default)]
-    pub bookmarks: Vec<u128>
+    pub bookmarks: Vec<Bookmark>,
+    #[serde(default)]
+    pub action_count: Vec<usize>
 }
 
 static CLIPS: LazyLock<Mutex<Vec<Clip>>> = LazyLock::new(|| {
@@ -62,7 +70,7 @@ fn save_to_file() {
 
     path.push("clips.json");
     let clips = get_clips();
-    let json = serde_json::to_string_pretty(&clips).expect("Failed to serialize json");
+    let json = serde_json::to_string(&clips).expect("Failed to serialize json");
 
     let mut clips_file = OpenOptions::new()
         .create(true)
@@ -76,7 +84,7 @@ fn save_to_file() {
     // send to app
     send_clips();
 }
-pub fn store_clip(clip_type: ClipType, clip_path: PathBuf, game_data: DetectedGameData, bookmark_times: Vec<u128>) {
+pub fn store_clip(clip_type: ClipType, clip_path: PathBuf, game_data: DetectedGameData, bookmark_times: Vec<Bookmark>, action_count: Vec<usize>) {
     // prepare move
     let clip_filename = clip_path.file_name().expect("Failed to get filename?");
     let mut new_path = get_clipping_folder();
@@ -119,13 +127,14 @@ pub fn store_clip(clip_type: ClipType, clip_path: PathBuf, game_data: DetectedGa
             game: game_data,
             size: file_size,
             thumbnail: thumbnail.to_string_lossy().to_string(),
-            bookmarks: bookmark_times
+            bookmarks: bookmark_times,
+            action_count: action_count
         });
     }
     save_to_file();
 }
 
-pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData) {
+pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData, action_count: Vec<usize>) {
     // prepare move
     let clip_filename = clip_path.file_name().expect("Failed to get filename?");
     if let Some((clip_name_no_extension, extension)) = split_last_dot(&clip_filename.to_string_lossy().to_string()) {
@@ -170,7 +179,8 @@ pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData) {
                 game: game_data,
                 size: file_size,
                 thumbnail: thumbnail.to_string_lossy().to_string(),
-                bookmarks: Vec::new() // reset bookmarks, maybe it's better if we don't?
+                bookmarks: Vec::new(), // reset bookmarks, maybe it's better if we don't?,
+                action_count: action_count
             });
 
         }

@@ -29,6 +29,10 @@
   --color-mocha-crust: #11111b;
 }
 
+svg:focus {
+  outline: none;
+}
+
 @layer base {
   ::-webkit-scrollbar {
     width: 10px;

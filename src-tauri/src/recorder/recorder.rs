@@ -11,12 +11,11 @@ use libobs_wrapper::{
 };
 use libobs_window_helper::{WindowSearchMode};
 use serde::{Deserialize, Serialize};
-use std::{path::{PathBuf}, time::{SystemTime, UNIX_EPOCH}};
+use std::{collections::HashSet, path::PathBuf, time::{SystemTime, UNIX_EPOCH}};
 
-use crate::{storage::games::DetectedGameData, windows_utils::{find_window_by_exe, wait_for_window}};
+use crate::{storage::games::DetectedGameData, watcher, windows_utils::{find_window_by_exe, wait_for_window}};
 
-// this Vec<u128> is storing bookmarks in ms since started recording, TODO: this is ugly. when the replay buffer will be made this needs to be taken into a more convenient location
-type OnFinishedCallback = Box<dyn FnOnce((PathBuf, Vec<u128>)) + Send>;
+type OnFinishedCallback = Box<dyn FnOnce((PathBuf, Vec<usize>)) + Send>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum VodEncoder {
@@ -187,26 +186,58 @@ pub fn record(
     // recording loop, wait for exit
     let device_state = device_state::DeviceState::new();
     let mut f8_debounce = false;
-    let mut bookmarks: Vec<u128> = Vec::new();
+
+    let mut action_count: Vec<usize> = Vec::from([0]);
+    let mut previous_keys: HashSet<Keycode> = HashSet::new();
+    let mut previous_mb: Vec<bool> = Vec::new();
+    let mut last_action_push_ms = started_ms;
+    let mut actions_this_second = 0;
 
     loop {
         std::thread::sleep(std::time::Duration::from_millis(50));
+        
+        let cur_ms = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("time went backwards").as_millis();
 
         // i actually don't know the impact of this on the cpu
+
         let keys = device_state.get_keys();
-        let f8_down = keys.contains(&Keycode::F8);
+        let mouse_buttons = device_state.get_mouse().button_pressed;
+
+        let f8_down = keys.clone().contains(&Keycode::F8);
 
         if f8_down && !f8_debounce {
             f8_debounce = true;
-            let cur_ms = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("time went backwards").as_millis();
 
             let difference = cur_ms - started_ms;
-            bookmarks.push(difference);
+            watcher::add_bookmark(String::from("BOOKMARK"), difference);
 
         } else if !f8_down && f8_debounce {
             f8_debounce = false;
+        }
+
+        // calculate action count
+        let key_difference = keys.clone().into_iter().filter(|x| !previous_keys.contains(x)).collect::<Vec<Keycode>>().len();
+        actions_this_second += key_difference;
+        previous_keys = keys.into_iter().collect();
+
+        for i in 0..previous_mb.len() {
+            let previous_option = previous_mb.get(i);
+            let now_option = mouse_buttons.get(i);
+
+            if previous_option.is_some_and(|x| x == &false) && now_option.is_some_and(|x| x == &true) {
+                actions_this_second += 1;
+            }
+        }
+
+        previous_mb = mouse_buttons;
+
+        // write action count on new second
+        if cur_ms - last_action_push_ms >= 1000 {
+            action_count.push(actions_this_second);
+            actions_this_second = 0;
+            last_action_push_ms = SystemTime::now().duration_since(UNIX_EPOCH).expect("time went backwards").as_millis();
         }
 
         // check if f8 pressed
@@ -216,7 +247,7 @@ pub fn record(
                     break;
                 }
             }
-            Err(_) => break,
+            Err(_) => break
         }
     }
 
@@ -224,7 +255,8 @@ pub fn record(
     let path = PathBuf::from(output_path);
     println!("saved to {:?}", path);
 
-    on_finished((path, bookmarks));
+    action_count.push(0); // padding data
+    on_finished((path, action_count));
 
     Ok(())
 }

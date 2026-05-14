@@ -1,9 +1,9 @@
 use std::sync::{LazyLock, Mutex};
 
-use serde::Deserialize;
+use serde::{Deserialize};
 use wmi::{WMIConnection};
 
-use crate::{announce_current_game, detector::detector, integrations::discord::rpc, recorder::recorder::{RecordingSettings, record}, storage::{clips::store_clip, games::DetectedGameData, settings::{get_clipping_folder, get_settings}}, windows_utils::{get_titles, wait_for_window}};
+use crate::{announce_current_game, detector::detector, integrations::discord::rpc, recorder::recorder::{RecordingSettings, record}, storage::{clips::{Bookmark, store_clip}, games::DetectedGameData, settings::{get_clipping_folder, get_settings}}, windows_utils::{get_titles, wait_for_window}};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename = "__InstanceCreationEvent")]
@@ -19,16 +19,35 @@ struct Process {
     process_id: u32,
 }
 
+
+
 static CURRENT_GAME: LazyLock<Mutex<Option<DetectedGameData>>> = LazyLock::new(|| {
     Mutex::new(None)
+});
+
+static CURRENT_BOOKMARKS: LazyLock<Mutex<Vec<Bookmark>>> = LazyLock::new(|| {
+    Mutex::new(vec![])
 });
 
 pub fn get_current_game() -> Option<DetectedGameData> {
     return CURRENT_GAME.lock().unwrap().clone();
 }
 
+pub fn get_current_bookmarks() -> Vec<Bookmark> {
+    return CURRENT_BOOKMARKS.lock().unwrap().clone();
+}
+
+
 pub fn set_current_game(current_game: Option<DetectedGameData>) {
+    *CURRENT_BOOKMARKS.lock().unwrap() = Vec::new();
     *CURRENT_GAME.lock().unwrap() = current_game;
+}
+
+pub fn add_bookmark(name: String, timestamp: u128) {
+    CURRENT_BOOKMARKS.lock().unwrap().push(Bookmark {
+        name,
+        timestamp
+    })
 }
 
 fn handle_process(proc: Process) {
@@ -57,32 +76,32 @@ fn handle_process(proc: Process) {
                         capture_mic: settings.capture_mic
                     };
 
-                    std::thread::spawn({
-                        let w_name = w_name.clone();         
-                        let recorder_settings = recorder_settings.clone();
-                        let detected_game_cloned = detected_game.clone();
+                    let w_name = w_name.clone();         
+                    let recorder_settings = recorder_settings.clone();
+                    let detected_game_cloned = detected_game.clone();
 
-                        // announce to frontend that we're playin a game
-                        announce_current_game(Some(&detected_game));
+                    // announce to frontend that we're playin a game
+                    announce_current_game(Some(&detected_game));
 
-                        // discord rpc stuff
-                        set_current_game(Some(detected_game.clone()));
-                        if settings.discord_rpc_enabled {
-                            rpc::set_activity(&detected_game);
-                        }
+                    // discord rpc stuff
+                    set_current_game(Some(detected_game.clone()));
+                    if settings.discord_rpc_enabled {
+                        rpc::set_activity(&detected_game);
+                    }
 
-                        move || {
-                            if let Err(e) = record(w_name, &detected_game, recorder_settings,
-                                Box::new(move |(clip_path, bookmark_times)| {
-                                    announce_current_game(None); // finished gaming
-                                    rpc::clear_activity();
-                                    store_clip(crate::storage::clips::ClipType::Recording, clip_path, detected_game_cloned, bookmark_times);
-                                })
-                            ) {
-                                eprintln!("An error occurred while recording: {:?}", e);
-                            }
-                        }
-                    });
+                    if let Err(e) = record(w_name, &detected_game, recorder_settings,
+                        Box::new(move |(clip_path, action_count)| {
+                            let bookmarks = get_current_bookmarks();
+
+                            set_current_game(None);
+                            announce_current_game(None); // finished gaming
+                            rpc::clear_activity();
+
+                            store_clip(crate::storage::clips::ClipType::Recording, clip_path, detected_game_cloned, bookmarks, action_count);
+                        })
+                    ) {
+                        eprintln!("An error occurred while recording: {:?}", e);
+                    }
                 }
             },
             Err(_) => println!("failed to wait for window for process {}, unable to record", &filename)
@@ -91,7 +110,7 @@ fn handle_process(proc: Process) {
 }
 #[tokio::main]
 pub async fn init() {
-    tauri::async_runtime::spawn(async {
+    match tokio::task::spawn_blocking(|| {
         let wmi_con = WMIConnection::new().expect("WMI Connection Failed");
 
         // get existing processes
@@ -116,5 +135,8 @@ pub async fn init() {
                 Err(e) => eprintln!("Notification error: {:?}", e),
             }
         }
-    }).await.unwrap();
+    }).await {
+        Ok(_) => return,
+        Err(e) => println!("watcher thread crashed: {}", e)
+    }
 }

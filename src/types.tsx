@@ -6,6 +6,10 @@ export interface DetectedGame {
   title_regex: string[];
 }
 
+export interface Bookmark {
+  name: string,
+  timestamp: number
+}
 export interface VodClip {
   id: string;
   clip_type: ClipType;
@@ -15,7 +19,8 @@ export interface VodClip {
   game: DetectedGame;
   size: number;
   thumbnail: string;
-  bookmarks: number[];
+  bookmarks: Bookmark[];
+  action_count: number[];
 }
 
 export type ClipType = "Recording" | "Clip";

@@ -4,6 +4,7 @@ import { Play, Pause, ArrowLeft, FolderOpen, Volume2, Maximize, ChevronLeft, Che
 import { useRef, useState, useEffect, useCallback } from "react";
 import { formatTime } from "../utils";
 import TimelineMarker from "./TimelineMarker";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 
 
@@ -41,6 +42,14 @@ export default function ClipViewer({ clip, onExitClip, setSelectedClipToLastClip
     const handleMouseUp = useCallback(() => {
         setIsDragging(null);
     }, []);
+
+
+    useEffect(() => {
+        setCurrentTime(0);
+        setTrimLeft(0);
+        setTrimRight(clip.duration);
+        setIsDragging(null);
+    }, [clip]);
 
     useEffect(() => {
         if (isDragging) {
@@ -168,19 +177,66 @@ export default function ClipViewer({ clip, onExitClip, setSelectedClipToLastClip
                         hidden={false}
                     />
 
-                    {clip.bookmarks.map((bookmark_time) => (
+                    {clip.bookmarks.map((bookmark) => (
                         <TimelineMarker
-                            label="BOOKMARK"
-                            time={bookmark_time / 1000}
+                            label={bookmark.name}
+                            time={bookmark.timestamp / 1000}
                             duration={clip.duration}
                             colorClass="bg-mocha-green"
                             hidden={true}
                         />
                     ))}
+                    
+                    <ResponsiveContainer width="100%" height={"100%"} >
+                        <LineChart
+                            data={clip.action_count.map((v, i) => ({
+                                index: i,
+                                value: v,
+                            }))}
+                            margin={{ top: 0, right: 0, bottom: 0, left: 0 }} 
+                        >
+                        <XAxis type="number" dataKey="index" domain={[0, clip.duration]} height={0} axisLine={false} tickLine={false}/>
+                        <YAxis domain={[0, 'dataMax']} hide />
+                        <Line type="monotone" dataKey="value" stroke="#cba6f7" dot={false} />
+                        <Tooltip
+                            labelFormatter={(label) => `${formatTime(label)}`}
+                            formatter={(value) => [`${value}`, "APS"]}
+                            contentStyle={{
+                                backgroundColor: "#cba6f7",
+                                border: "none",
+                                borderRadius: "6px",
+                                padding: "2px 7px",
+                                fontSize: "11px",
+                                color: "#cdd6f4",
+                            }}
+                              wrapperStyle={{
+                                zIndex: 400,   
+                                pointerEvents: 'none',
+                            }}
+                            labelStyle={{
+                                margin: 0,
+                                padding: 0,
+                                fontWeight: 700,
+                                color: "#1e1e2e",
+                            }}
+                            itemStyle={{
+                                margin: 0,
+                                padding: 0,
+                                fontFamily: "monospace",
+                                color: "#1e1e2e",
+                                fontWeight: 700,
+                            }}
+                        />
+                        </LineChart>
+                    </ResponsiveContainer>
+
+
                 </div>
 
                 <div className="flex items-center justify-between px-2 py-3">
-                    <div className="flex flex-col"></div>
+                    <div className="flex flex-col">
+                        {clip.action_count.length > 0 && <p className="text-mocha-text font-semibold">APM: {(clip.action_count.reduce((totalSum, cur) => totalSum + cur) / clip.action_count.length * 60).toFixed(2)}</p>}
+                    </div>
 
                     <div className="flex items-center gap-3">
                         <button 

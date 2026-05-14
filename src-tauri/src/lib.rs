@@ -65,9 +65,11 @@ fn trim_clip(clip: Clip, start: f64, end: f64) -> bool {
     let mut output_path = get_clipping_folder();
     output_path.push(clip.path.file_name().unwrap());
 
+    let action_count = clip.action_count[(start.floor() as usize)..=(std::cmp::min(end.floor() as usize, clip.action_count.len()))].iter().cloned().collect::<Vec<usize>>();
+
     match ffmpeg::ffmpeg::trim_clip(&clip.path, &output_path, start, end) {
         Ok(_) => {
-            storage::clips::store_new_trim(output_path, clip.game);
+            storage::clips::store_new_trim(output_path, clip.game, action_count);
             true
         },
         Err(_) => false,
