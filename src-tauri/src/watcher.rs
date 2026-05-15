@@ -1,4 +1,4 @@
-use std::sync::{LazyLock, Mutex};
+use std::{sync::{LazyLock, Mutex}, time::{Duration, SystemTime}};
 
 use serde::{Deserialize};
 use wmi::{WMIConnection};
@@ -19,7 +19,9 @@ struct Process {
     process_id: u32,
 }
 
-
+static RECORDING_START_TIME: LazyLock<Mutex<Option<SystemTime>>> = LazyLock::new(|| {
+    Mutex::new(None)
+});
 
 static CURRENT_GAME: LazyLock<Mutex<Option<DetectedGameData>>> = LazyLock::new(|| {
     Mutex::new(None)
@@ -37,17 +39,26 @@ pub fn get_current_bookmarks() -> Vec<Bookmark> {
     return CURRENT_BOOKMARKS.lock().unwrap().clone();
 }
 
+pub fn get_recording_start_time() -> Option<SystemTime> {
+    return RECORDING_START_TIME.lock().unwrap().clone();
+}
 
 pub fn set_current_game(current_game: Option<DetectedGameData>) {
     *CURRENT_BOOKMARKS.lock().unwrap() = Vec::new();
     *CURRENT_GAME.lock().unwrap() = current_game;
 }
 
-pub fn add_bookmark(name: String, timestamp: u128) {
-    CURRENT_BOOKMARKS.lock().unwrap().push(Bookmark {
-        name,
-        timestamp
-    })
+pub fn add_bookmark(name: String) {
+    if let Some(start_time) = get_recording_start_time() {
+        CURRENT_BOOKMARKS.lock().unwrap().push(Bookmark {
+            name,
+            timestamp: start_time.elapsed().unwrap_or(Duration::ZERO).as_millis()
+        })
+    }
+}
+
+pub fn set_recording_start_time(time: Option<SystemTime>) {
+    *RECORDING_START_TIME.lock().unwrap() = time;
 }
 
 fn handle_process(proc: Process) {
@@ -94,6 +105,7 @@ fn handle_process(proc: Process) {
                             let bookmarks = get_current_bookmarks();
 
                             set_current_game(None);
+                            set_recording_start_time(None);
                             announce_current_game(None); // finished gaming
                             rpc::clear_activity();
 

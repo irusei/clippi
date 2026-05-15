@@ -42,6 +42,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["installer.exe"]
+    "resources": ["installer.exe", "assets/bookmark.wav"]
   }
 }

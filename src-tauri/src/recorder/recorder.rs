@@ -11,9 +11,9 @@ use libobs_wrapper::{
 };
 use libobs_window_helper::{WindowSearchMode};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashSet, path::PathBuf, time::{SystemTime, UNIX_EPOCH}};
+use std::{collections::HashSet, path::PathBuf, time::{Duration, SystemTime, UNIX_EPOCH}};
 
-use crate::{storage::games::DetectedGameData, watcher, windows_utils::{find_window_by_exe, wait_for_window}};
+use crate::{sound, storage::games::DetectedGameData, watcher, windows_utils::{find_window_by_exe, wait_for_window}};
 
 type OnFinishedCallback = Box<dyn FnOnce((PathBuf, Vec<usize>)) + Send>;
 
@@ -176,10 +176,8 @@ pub fn record(
     let mut output = output_builder.build()?;
     output.start()?;
 
-    let started_ms = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("time went backwards").as_millis();
-
+    let started_time = SystemTime::now();
+    watcher::set_recording_start_time(Some(started_time));
 
     let window_exe = window_exe_name.clone();
 
@@ -190,18 +188,18 @@ pub fn record(
     let mut action_count: Vec<usize> = Vec::from([0]);
     let mut previous_keys: HashSet<Keycode> = HashSet::new();
     let mut previous_mb: Vec<bool> = Vec::new();
-    let mut last_action_push_ms = started_ms;
+    let mut last_action_push = SystemTime::now();
     let mut actions_this_second = 0;
 
+    // on alt+tab, windows sometimes disappear
+    // need to make sure they're gone for at least two seconds before ending the recording
+    let mut window_missing_start: Option<SystemTime> = None;
+    let window_missing_time_threshold = Duration::from_secs(2);
+
     loop {
-        std::thread::sleep(std::time::Duration::from_millis(50));
-        
-        let cur_ms = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("time went backwards").as_millis();
+        std::thread::sleep(Duration::from_millis(50));
 
         // i actually don't know the impact of this on the cpu
-
         let keys = device_state.get_keys();
         let mouse_buttons = device_state.get_mouse().button_pressed;
 
@@ -210,8 +208,11 @@ pub fn record(
         if f8_down && !f8_debounce {
             f8_debounce = true;
 
-            let difference = cur_ms - started_ms;
-            watcher::add_bookmark(String::from("BOOKMARK"), difference);
+            watcher::add_bookmark(String::from("BOOKMARK"));
+            
+            std::thread::spawn(|| {
+                let _ = sound::play_sound(PathBuf::from("./assets/bookmark.wav"));
+            });
 
         } else if !f8_down && f8_debounce {
             f8_debounce = false;
@@ -234,20 +235,33 @@ pub fn record(
         previous_mb = mouse_buttons;
 
         // write action count on new second
-        if cur_ms - last_action_push_ms >= 1000 {
+        if last_action_push.elapsed().unwrap_or(Duration::ZERO) >= Duration::from_secs(1) {
             action_count.push(actions_this_second);
             actions_this_second = 0;
-            last_action_push_ms = SystemTime::now().duration_since(UNIX_EPOCH).expect("time went backwards").as_millis();
+            last_action_push = SystemTime::now();
         }
 
-        // check if f8 pressed
+        // check if window is still present
         match libobs_window_helper::get_all_windows(WindowSearchMode::IncludeMinimized) {
             Ok(windows) => {
                 if find_window_by_exe(&windows, &window_exe).is_none() {
-                    break;
+                    // make sure window has been missing for atleast a couple seconds
+                    window_missing_start.get_or_insert(SystemTime::now());
+                } else {
+                    // reset timer
+                    window_missing_start = None;
                 }
             }
-            Err(_) => break
+            Err(_) => {
+                window_missing_start.get_or_insert(SystemTime::now());
+            }
+        }
+
+        // Break if threshold seconds were elapsed for missing window
+        if let Some(window_missing_start) = window_missing_start {
+            if window_missing_start.elapsed().unwrap_or(Duration::ZERO) >= window_missing_time_threshold {
+                break;
+            }
         }
     }
 

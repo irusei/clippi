@@ -46,3 +46,4 @@ uuid = {
     features = ["v4"]
 }
 discord-rich-presence = "1.1.0"
+rodio = "0.22.2"

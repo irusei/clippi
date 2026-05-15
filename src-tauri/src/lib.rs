@@ -12,6 +12,7 @@ pub mod ffmpeg;
 pub mod integrations;
 pub mod recorder;
 pub mod detector;
+pub mod sound;
 pub mod windows_utils;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
