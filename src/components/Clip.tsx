@@ -1,7 +1,9 @@
-import { Play, Trash } from "lucide-react";
+import { Play, Trash, Pencil } from "lucide-react";
 import { VodClip } from "../types";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { formatTime, parseSize } from "../utils";
+import { useState } from "react";
+import Input from "./ui/Input";
 
 interface ClipProps {
     clip: VodClip
@@ -9,6 +11,9 @@ interface ClipProps {
 }
 
 export default function Clip({ clip, onClick}: ClipProps) {
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [titleInput, setTitleInput] = useState(clip.title);
+
     return (
         <div className={"flex flex-col rounded-md w-80 h-60 bg-mocha-base border-mocha-base border-2 hover:cursor-pointer overflow-hidden"} onClick={onClick}>
             <div className={"relative h-2/3 w-full bg-mocha-mantle flex items-center justify-center"}>
@@ -19,7 +24,37 @@ export default function Clip({ clip, onClick}: ClipProps) {
                 </div>
             </div>
             <div className={"p-2 px-4 w-full text-mocha-text"}>
-                <p>{clip.title}</p>
+                {isEditingTitle ? (
+                    <Input
+                        className="w-full"
+                        autoFocus={true}
+                        type="text"
+                        value={titleInput}
+                        onChange={(value) => setTitleInput(value)}
+                        onBlur={() => {
+                            if (titleInput !== clip.title) {
+                                invoke("rename_clip", { clip, newTitle: titleInput.trim() });
+                            }
+                            setIsEditingTitle(false);
+                        }}
+                        onKeyDown={(key) => {
+                            if (key === "Enter") {
+                                if (titleInput !== clip.title) {
+                                    invoke("rename_clip", { clip, newTitle: titleInput.trim() });
+                                }
+                                setIsEditingTitle(false);
+                            }
+                        }}
+                    />
+                ) : (
+                    <div className="flex items-center gap-1 cursor-pointer group" onClick={(e) => {
+                        e.stopPropagation();
+                        setIsEditingTitle(true);
+                    }}>
+                        <p className="truncate">{clip.title}</p>
+                        <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity shrink-0" />
+                    </div>
+                )}
                 <div className={"flex flex-row gap-2 py-1 text-sm items-center text-mocha-overlay2"}>
                     {clip.game.icon && <img src={clip.game.icon} className="w-4 h-4"/>}
                     <p>{clip.game.name}</p>

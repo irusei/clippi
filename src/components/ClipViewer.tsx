@@ -1,10 +1,11 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { VodClip } from "../types";
-import { Play, Pause, ArrowLeft, FolderOpen, Volume2, Maximize, ChevronLeft, ChevronRight, Scissors, VolumeOff } from "lucide-react"
+import { Play, Pause, ArrowLeft, FolderOpen, Volume2, Maximize, ChevronLeft, ChevronRight, Scissors, VolumeOff, Pencil } from "lucide-react"
 import { useRef, useState, useEffect, useCallback } from "react";
 import { formatTime } from "../utils";
 import TimelineMarker from "./TimelineMarker";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import Input from "./ui/Input";
 
 
 
@@ -24,6 +25,8 @@ export default function ClipViewer({ clip, onExitClip, setSelectedClipToLastClip
     const [trimRight, setTrimRight] = useState<number>(clip.duration);
     const [isDragging, setIsDragging] = useState<'left' | 'right' | null>(null);
     const [volume, setVolume] = useState(1);
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [titleInput, setTitleInput] = useState(clip.title);
 
     const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!isDragging || !timelineRef.current) return;
@@ -49,6 +52,8 @@ export default function ClipViewer({ clip, onExitClip, setSelectedClipToLastClip
         setTrimLeft(0);
         setTrimRight(clip.duration);
         setIsDragging(null);
+        setTitleInput(clip.title);
+        setIsEditingTitle(false);
     }, [clip]);
 
     useEffect(() => {
@@ -84,7 +89,34 @@ export default function ClipViewer({ clip, onExitClip, setSelectedClipToLastClip
             <div className="absolute z-20 flex items-center justify-between w-full p-4 pointer-events-none">
                 <div className="flex items-center gap-4 pointer-events-auto opacity-100 px-4 py-2">
                     <ArrowLeft className="w-5 h-5 hover:text-mocha-lavender cursor-pointer" onClick={onExitClip} />
-                    <p className="font-medium">{clip.title}</p>
+                    {isEditingTitle ? (
+                        <Input
+                            type="text"
+                            value={titleInput}
+                            onChange={(value) => setTitleInput(value)}
+                            onBlur={() => {
+                                if (titleInput !== clip.title) {
+                                    invoke("rename_clip", { clip, newTitle: titleInput.trim() });
+                                }
+                                setIsEditingTitle(false);
+                            }}
+                            onKeyDown={(key) => {
+                                if (key === "Enter") {
+                                    if (titleInput !== clip.title) {
+                                        invoke("rename_clip", { clip, newTitle: titleInput.trim() });
+                                    }
+                                    setIsEditingTitle(false);
+                                }
+                            }}
+                            className="w-full"
+                            autoFocus={true}
+                        />
+                    ) : (
+                        <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setIsEditingTitle(true)}>
+                            <p className="font-medium">{clip.title}</p>
+                            <Pencil className="w-3.5 h-3.5 opacity-0 group-hover:opacity-50 transition-opacity" />
+                        </div>
+                    )}
                 </div>
                 <div 
                     className="flex items-center justify-center w-10 h-10 opacity-100 hover:text-mocha-lavender cursor-pointer pointer-events-auto"

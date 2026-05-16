@@ -213,3 +213,16 @@ pub fn reload_clips() {
     let mut clips_locked = CLIPS.lock().unwrap();
     *clips_locked = load_from_file();
 }
+
+pub fn rename_clip(clip: Clip, new_title: String) {
+    {
+        let mut clips = CLIPS.lock().unwrap();
+        for c in clips.iter_mut() {
+            if c.id == clip.id {
+                c.title = new_title;
+                break;
+            }
+        }
+    }
+    save_to_file();
+}

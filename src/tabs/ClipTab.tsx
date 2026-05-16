@@ -80,7 +80,7 @@ export default function ClipTab() {
                 <div key={game.name} className={`p-2 h-10 flex flex-row space-x-2 bg-mocha-base rounded-lg items-center justify-center cursor-pointer border ${selectedGameName === game.name ? "border-mocha-mauve" : "border-mocha-base/50 hover:border-mocha-mauve/50"}`} 
                 onClick={() => setSelectedGameName(selectedGameName === game.name ? "" : game.name)}>
                   <img className="w-5 h-5" src={game.icon ?? ""}/>
-                  <p className="text-mocha-text">{game.name}</p>
+                  <p className="text-mocha-text truncate">{game.name}</p>
                   <p className="text-mocha-overlay2">{count}</p>
                 </div>
               ))}

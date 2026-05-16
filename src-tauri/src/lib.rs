@@ -116,13 +116,25 @@ fn edit_game(old_game: DetectedGameData, new_game: DetectedGameData) {
 
 #[tauri::command]
 fn list_processes() -> Vec<String> {
-    let wmi_con = WMIConnection::new().expect("Failed to get WMI connection");
+    let wmi_con = match WMIConnection::new() {
+        Ok(con) => con,
+        Err(_) => return vec![],
+    };
+    let processes: Result<Vec<watcher::Process>, _> = wmi_con
+        .raw_query("SELECT Name FROM Win32_Process");
+    let mut names: Vec<String> = match processes {
+        Ok(procs) => procs.iter().map(|p| p.name.clone()).collect(),
+        Err(_) => return vec![],
+    };
     
-    let processes: Vec<watcher::Process> = wmi_con.raw_query("SELECT Name, ProcessId FROM Win32_Process").unwrap();
-    let mut names: Vec<String> = processes.iter().map(|p| p.name.clone()).collect();
     names.sort();
     names.dedup();
     names
+}
+
+#[tauri::command]
+fn rename_clip(clip: Clip, new_title: String) {
+    storage::clips::rename_clip(clip, new_title);
 }
 
 
@@ -182,7 +194,7 @@ pub fn run() {
             }
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_clips, open_clip_in_explorer, trim_clip, delete_clip, get_settings, set_settings, get_games, add_game, remove_game, edit_game, get_current_game, list_processes])
+        .invoke_handler(tauri::generate_handler![get_clips, open_clip_in_explorer, trim_clip, delete_clip, rename_clip, get_settings, set_settings, get_games, add_game, remove_game, edit_game, get_current_game, list_processes])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
