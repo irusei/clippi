@@ -1,4 +1,4 @@
-use std::{sync::{LazyLock, Mutex}, time::{Duration, SystemTime}};
+use std::{sync::{LazyLock, Mutex}, thread, time::{Duration, SystemTime}};
 
 use serde::{Deserialize};
 use wmi::{WMIConnection};
@@ -14,9 +14,9 @@ struct NewProcessEvent {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
-struct Process {
-    name: String,
-    process_id: u32,
+pub struct Process {
+    pub name: String,
+    pub process_id: u32,
 }
 
 static RECORDING_START_TIME: LazyLock<Mutex<Option<SystemTime>>> = LazyLock::new(|| {
@@ -61,7 +61,17 @@ pub fn set_recording_start_time(time: Option<SystemTime>) {
     *RECORDING_START_TIME.lock().unwrap() = time;
 }
 
-fn handle_process(proc: Process) {
+pub fn rescan_processes(wmi_con: &WMIConnection) {
+    if get_current_game().is_none() {
+        let processes: Vec<Process> = wmi_con.raw_query("SELECT Name, ProcessId FROM Win32_Process").unwrap();
+
+        for proc in processes {
+            handle_process(proc);
+        }
+    }
+}
+
+pub fn handle_process(proc: Process) {
     let filename = proc.name;
     let is_game: bool = detector::process_exists(&filename);
     if is_game {
@@ -126,26 +136,13 @@ pub async fn init() {
         let wmi_con = WMIConnection::new().expect("WMI Connection Failed");
 
         // get existing processes
-        let processes: Vec<Process> = wmi_con.raw_query("SELECT Name, ProcessId FROM Win32_Process").unwrap();
+        // i feel like doing this in a loop is less messy than the window create event, because
+        // if i would need to rescan games on a game chance in the games storage
+        // it would require me to spawn countless threads, whereas this could just update dynamically?
+        loop {
+            rescan_processes(&wmi_con);
 
-        for proc in processes {
-            handle_process(proc);
-        }
-
-        // new process event
-        let iterator = wmi_con
-            .exec_notification_query(
-                "SELECT * FROM __InstanceCreationEvent WITHIN 1 WHERE TargetInstance ISA 'Win32_Process'"
-            ).expect("Query Failed");
-
-        for result in iterator {
-            match result {
-                Ok(wrapper) => {
-                    let event: NewProcessEvent = wrapper.into_desr().expect("Failed to deserialize");
-                    handle_process(event.target_instance);
-                }
-                Err(e) => eprintln!("Notification error: {:?}", e),
-            }
+            thread::sleep(Duration::from_secs(1));
         }
     }).await {
         Ok(_) => return,
