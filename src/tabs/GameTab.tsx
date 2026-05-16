@@ -3,6 +3,7 @@ import { DetectedGame } from "../types"
 import { invoke } from "@tauri-apps/api/core";
 import { Switch } from "../components/ui/Switch";
 import Input from "../components/ui/Input";
+import ProcessPicker from "../components/ProcessPicker";
 
 interface GameProps {
     game: DetectedGame;
@@ -156,14 +157,12 @@ export default function GameTab() {
                                     ))}
                                 </div>
 
-                                <button
-                                    onClick={() => {
-                                        updateField('executables', [...modifiedGame.executables, ""])
+                                 <ProcessPicker
+                                    onProcessSelected={(processName) => {
+                                        updateField('executables', [...modifiedGame.executables, processName]);
                                     }}
-                                    className="bg-mocha-mauve hover:bg-mocha-mauve/80 transition-colors rounded-md py-2 px-4 font-semibold text-mocha-base mt-2"
-                                >
-                                    Add new executable
-                                </button>
+                                    existingExecutables={modifiedGame.executables}
+                                />
                             </div>
 
                             <div className="flex flex-col gap-y-2">

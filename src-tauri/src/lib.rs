@@ -3,6 +3,7 @@ use std::{path::PathBuf, sync::{LazyLock, Mutex}};
 use tauri::{AppHandle, Emitter, Manager, menu::{Menu, MenuItem}, tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}};
 
 use crate::{integrations::discord::rpc, storage::{clips::Clip, games::DetectedGameData, settings::{Settings, get_clipping_folder}}};
+use wmi::WMIConnection;
 
 use std::thread::spawn;
 
@@ -112,6 +113,19 @@ fn edit_game(old_game: DetectedGameData, new_game: DetectedGameData) {
     storage::games::edit_game(old_game, new_game);
 }
 
+
+#[tauri::command]
+fn list_processes() -> Vec<String> {
+    let wmi_con = WMIConnection::new().expect("Failed to get WMI connection");
+    
+    let processes: Vec<watcher::Process> = wmi_con.raw_query("SELECT Name, ProcessId FROM Win32_Process").unwrap();
+    let mut names: Vec<String> = processes.iter().map(|p| p.name.clone()).collect();
+    names.sort();
+    names.dedup();
+    names
+}
+
+
 #[tauri::command]
 fn get_current_game() -> Option<DetectedGameData> {
     watcher::get_current_game()
@@ -168,7 +182,7 @@ pub fn run() {
             }
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_clips, open_clip_in_explorer, trim_clip, delete_clip, get_settings, set_settings, get_games, add_game, remove_game, edit_game, get_current_game])
+        .invoke_handler(tauri::generate_handler![get_clips, open_clip_in_explorer, trim_clip, delete_clip, get_settings, set_settings, get_games, add_game, remove_game, edit_game, get_current_game, list_processes])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

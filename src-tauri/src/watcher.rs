@@ -5,12 +5,6 @@ use wmi::{WMIConnection};
 
 use crate::{announce_current_game, detector::detector, integrations::discord::rpc, recorder::recorder::{RecordingSettings, record}, storage::{clips::{Bookmark, store_clip}, games::DetectedGameData, settings::{get_clipping_folder, get_settings}}, windows_utils::{get_titles, wait_for_window}};
 
-#[derive(Deserialize, Debug)]
-#[serde(rename = "__InstanceCreationEvent")]
-struct NewProcessEvent {
-    #[serde(rename = "TargetInstance")]
-    target_instance: Process,
-}
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
