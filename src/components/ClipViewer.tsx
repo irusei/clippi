@@ -87,7 +87,7 @@ export default function ClipViewer({ clip, onExitClip, setSelectedClipToLastClip
         <div className="relative flex flex-col w-full h-screen overflow-hidden text-mocha-text bg-mocha-base font-sans">
             
             <div className="absolute z-20 flex items-center justify-between w-full p-4 pointer-events-none">
-                <div className="flex items-center gap-4 pointer-events-auto opacity-100 px-4 py-2">
+                <div className="flex items-center gap-4 pointer-events-auto opacity-100 px-4 py-2 max-h-10">
                     <ArrowLeft className="w-5 h-5 hover:text-mocha-lavender cursor-pointer" onClick={onExitClip} />
                     {isEditingTitle ? (
                         <Input
@@ -108,7 +108,7 @@ export default function ClipViewer({ clip, onExitClip, setSelectedClipToLastClip
                                     setIsEditingTitle(false);
                                 }
                             }}
-                            className="w-full"
+                            className="w-100"
                             autoFocus={true}
                         />
                     ) : (
