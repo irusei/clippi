@@ -121,7 +121,7 @@ fn list_processes() -> Vec<String> {
         Err(_) => return vec![],
     };
     let processes: Result<Vec<watcher::Process>, _> = wmi_con
-        .raw_query("SELECT Name FROM Win32_Process");
+        .raw_query("SELECT Name, ProcessId FROM Win32_Process");
     let mut names: Vec<String> = match processes {
         Ok(procs) => procs.iter().map(|p| p.name.clone()).collect(),
         Err(_) => return vec![],
