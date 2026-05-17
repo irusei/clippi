@@ -38,28 +38,7 @@ pub struct RecordingSettings {
 }
 
 fn get_date_format() -> String {
-    let now = SystemTime::now();
-    let secs_since_epoch = now
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards")
-        .as_secs();
-
-    let days = secs_since_epoch / 86400;
-    let seconds_today = secs_since_epoch % 86400;
-    let hours = seconds_today / 3600;
-    let minutes = (seconds_today % 3600) / 60;
-    let seconds = seconds_today % 60;
-
-    let year = 1970 + days / 365;
-    let month = (days % 365) / 30 + 1;
-    let day = (days % 365) % 30 + 1;
-
-    let date = format!(
-        "{:04}-{:02}-{:02} {:02}-{:02}-{:02}",
-        year, month, day, hours, minutes, seconds
-    );
-
-    date
+    chrono::Local::now().format("%Y-%m-%d %H:%M").to_string()
 }
 
 pub fn record(

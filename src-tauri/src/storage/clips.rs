@@ -8,7 +8,7 @@ use crate::{ffmpeg::{self, ffprobe}, send_clips, storage::{games::DetectedGameDa
 pub enum ClipType {
     #[default]
     Recording,
-    Clip // trims will be by default clips
+    Clip, // trims will be by default clips
 }
 
 fn default_uuid() -> uuid::Uuid {
@@ -36,7 +36,9 @@ pub struct Clip {
     #[serde(default)]
     pub bookmarks: Vec<Bookmark>,
     #[serde(default)]
-    pub action_count: Vec<usize>
+    pub action_count: Vec<usize>,
+    #[serde(default)]
+    pub date: String,
 }
 
 static CLIPS: LazyLock<Mutex<Vec<Clip>>> = LazyLock::new(|| {
@@ -128,7 +130,8 @@ pub fn store_clip(clip_type: ClipType, clip_path: PathBuf, game_data: DetectedGa
             size: file_size,
             thumbnail: thumbnail.to_string_lossy().to_string(),
             bookmarks: bookmark_times,
-            action_count: action_count
+            action_count: action_count,
+            date: chrono::Local::now().format("%Y-%m-%d %H:%M").to_string(),
         });
     }
     save_to_file();
@@ -180,7 +183,8 @@ pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData, action_co
                 size: file_size,
                 thumbnail: thumbnail.to_string_lossy().to_string(),
                 bookmarks: Vec::new(), // reset bookmarks, maybe it's better if we don't?,
-                action_count: action_count
+                action_count: action_count,
+                date: chrono::Local::now().format("%Y-%m-%d %H:%M").to_string(),
             });
 
         }

@@ -60,7 +60,10 @@ export default function Clip({ clip, onClick}: ClipProps) {
                     <p>{clip.game.name}</p>
                 </div>
                 <div className={"flex flex-row gap-2 py-0.5 text-sm w-full justify-between text-mocha-overlay2"}>
-                    <p>{parseSize(clip.size)}</p>
+                    <div className="flex flex-row gap-x-2">
+                        <p>{parseSize(clip.size)}</p>
+                        <p>{clip.date}</p>
+                    </div>
                     <Trash className="w-4 h-4 text-mocha-red hover:cursor-pointer" onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();

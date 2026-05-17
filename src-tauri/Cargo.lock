@@ -643,6 +643,7 @@ name = "clippi"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "device_query",
  "dirs 6.0.0",
  "discord-rich-presence",

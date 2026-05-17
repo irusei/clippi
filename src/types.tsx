@@ -21,6 +21,7 @@ export interface VodClip {
   thumbnail: string;
   bookmarks: Bookmark[];
   action_count: number[];
+  date: string;
 }
 
 export type ClipType = "Recording" | "Clip";
