@@ -38,7 +38,7 @@ pub struct RecordingSettings {
 }
 
 fn get_date_format() -> String {
-    chrono::Local::now().format("%Y-%m-%d %H:%M").to_string()
+    chrono::Local::now().format("%Y-%m-%d %H-%M-%S").to_string()
 }
 
 pub fn record(
