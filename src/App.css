@@ -40,7 +40,7 @@ svg:focus {
   }
 
   ::-webkit-scrollbar-track {
-    background: var(--color-mocha-base);
+    background: var(--color-mocha-mantle);
   }
 
   ::-webkit-scrollbar-thumb {

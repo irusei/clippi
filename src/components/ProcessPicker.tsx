@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import Input from "./ui/Input";
+import { Plus } from "lucide-react";
 
 interface ProcessPickerProps {
     onProcessSelected: (processName: string) => void;
@@ -41,16 +42,17 @@ export default function ProcessPicker({ onProcessSelected, existingExecutables }
     return (
         <div className="relative" ref={containerRef}>
             <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center text-center justify-center gap-2 bg-mocha-mauve hover:bg-mocha-mauve/80 transition-colors rounded-md py-2 px-4 font-semibold text-mocha-base"
+                onClick={() => {
+                    setIsOpen(!isOpen);
+                }}
+                className="p-2 text-mocha-mauve flex items-center justify-center hover:cursor-pointer"
             >
-                <p className="text-center">Pick process</p>
+                <Plus className="w-4 h-4" />
             </button>
 
             {isOpen && (
-                <div className="absolute left-0 right-0 top-full mt-1 bg-mocha-base border border-mocha-base rounded-xl z-20 overflow-hidden">
-                    <div className="w-full p-2 border-b border-mocha-base/20">
+                <div className="absolute right-0 top-full w-50 mt-1 bg-mocha-base border border-mocha-mauve/20 rounded-xl z-20 overflow-hidden">
+                    <div className="w-full p-2 border-b border-mocha-mantle/20">
                         <Input
                             className="w-full"
                             type="text"
