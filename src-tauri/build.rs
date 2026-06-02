@@ -1,6 +1,6 @@
-use std::{fs, path::Path, process::Command};
-
+#[cfg(target_os = "windows")]
 fn main() {
+    use std::{fs, path::Path, process::Command};
     let installer_dir = Path::new("../installer");
 
     let target_exe = installer_dir.join("target/release/installer.exe");
@@ -20,5 +20,10 @@ fn main() {
     fs::copy(&target_exe, &dest_exe)
         .unwrap_or_else(|e| panic!("failed to copy installer.exe: {}", e));
 
+    tauri_build::build()
+}
+
+#[cfg(target_os = "linux")]
+fn main() {
     tauri_build::build()
 }

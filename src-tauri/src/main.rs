@@ -3,8 +3,6 @@
 
 use std::env;
 
-#[cfg(not(target_os = "windows"))]
-compile_error!("This application only supports Windows.");
 
 fn set_cwd_to_exe_dir() -> std::io::Result<()> {
     let exe_path = env::current_exe()?;
@@ -18,8 +16,6 @@ fn set_cwd_to_exe_dir() -> std::io::Result<()> {
 
 #[tokio::main]
 async fn main() {
-    #[cfg(not(target_os = "windows"))]
-    std::process::exit(0);
     set_cwd_to_exe_dir().expect("failed to set cwd");
     clippi_lib::run()
 }

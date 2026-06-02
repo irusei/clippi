@@ -1,6 +1,6 @@
 # clippi
 
-a lightweight game clipping* app for windows
+a lightweight game clipping* app for windows and linux
 
 *the clipping part is coming soon, only records full sessions for now
 
@@ -12,9 +12,16 @@ a lightweight game clipping* app for windows
 - organized clip library
 - settings
 
+## linux disclaimer
+the linux version of the app does not use obs but instead requires programs installed on the host as `gpu-screen-recorder`, `ffmpeg` and `ffprobe`
+viewing clips also isn't possible atm due to an unmerged pr for tauri, but hopefully as soon as it gets merged it can work properly (you can use vlc for this instead)
+due to limitations of wayland (cba to try x11) window capture isn't possible and the whole main display gets captured
+
+tested on cachyos w/ wayland
+
 ## setup
 
-### development
+### development (windows)
 
 ```bash
 npm install

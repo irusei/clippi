@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import Input from "./ui/Input";
 import { Plus } from "lucide-react";
@@ -29,15 +29,16 @@ export default function ProcessPicker({ onProcessSelected, existingExecutables }
         if (isOpen && processes.length === 0) {
             setLoading(true);
             invoke<string[]>("list_processes").then((procs) => {
-                setProcesses(procs);
+                setProcesses([...new Set(procs)]);
                 setLoading(false);
             })
         }
     }, [isOpen]);
 
-    const filtered = processes
+    const filtered = useMemo(() => processes
         .filter((p) => p.toLowerCase().includes(search.toLowerCase()))
-        .filter((p) => !existingExecutables!.includes(p));
+        .filter((p) => !existingExecutables!.includes(p))
+    , [processes, search, existingExecutables]);
 
     return (
         <div className="relative" ref={containerRef}>

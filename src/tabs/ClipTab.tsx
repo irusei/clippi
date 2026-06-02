@@ -33,7 +33,8 @@ export default function ClipTab() {
   const [selectedClip, setSelectedClip] = useState<VodClip | null>(null);
   const [uniqueGames, setUniqueGames] = useState<[DetectedGame, number][]>([]);
   const [selectedGameName, setSelectedGameName] = useState<string>("");
-  
+  const [platform, setPlatform] = useState<string>("");
+
   // runs on trim, sets clip to trim
   function setSelectedClipToLastClip() {
     invoke('get_clips').then((res) => {
@@ -43,6 +44,12 @@ export default function ClipTab() {
     });
   }
 
+  function _setSelectedClip(clip: VodClip) {
+    if (platform === "windows")
+        setSelectedClip(clip);
+    else
+        alert("unfortunately due to tauri requiring a merged PR (#14402) clip playback isn't really possible atm, this will be fixed when this gets hopefully merged")
+  }
   function getClips() {
     invoke('get_clips').then((res) => {
       setClips((res as VodClip[]))
@@ -60,6 +67,9 @@ export default function ClipTab() {
     });
 
     getClips();
+
+    // set platform
+    invoke("get_platform").then((platform) => setPlatform(platform as string));
 
     return () => {
       ul.then((ul) => ul());
@@ -88,7 +98,7 @@ export default function ClipTab() {
             <div className={"flex flex-row flex-wrap gap-6"}>
                 {clips.map((clip) => {
                   if (selectedGameName == "" || clip.game.name == selectedGameName)
-                    return <Clip key={clip.id} clip={clip} onClick={() => setSelectedClip(clip)}/>
+                    return <Clip key={clip.id} clip={clip} onClick={() => _setSelectedClip(clip)}/>
                 })}
             </div>
         </div>

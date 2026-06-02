@@ -18,12 +18,21 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
-[dependencies]
+[target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.58", features = [
     "Win32_Foundation",
     "Win32_UI_WindowsAndMessaging",
     "Win32_System_Threading",
 ] }
+wmi = "0.18.4"
+libobs-simple = { git = "https://github.com/irusei/clippi-libobs-rs.git", package = "libobs-simple", features = ["window-list"] }
+libobs-wrapper = { git = "https://github.com/irusei/clippi-libobs-rs.git", package = "libobs-wrapper" }
+libobs-window-helper = { git = "https://github.com/irusei/clippi-libobs-rs.git", package = "libobs-window-helper" }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+sysinfo = "0.39.2"
+
+[dependencies]
 tauri = { version = "2", features = ["protocol-asset", "tray-icon", "image-png"] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
@@ -31,14 +40,8 @@ serde_json = "1"
 anyhow = "1"
 env_logger = "0.11"
 indicatif = "0.18"
-
-libobs-simple = { git = "https://github.com/irusei/clippi-libobs-rs.git", package = "libobs-simple", features = ["window-list"] }
-libobs-wrapper = { git = "https://github.com/irusei/clippi-libobs-rs.git", package = "libobs-wrapper" }
-libobs-window-helper = { git = "https://github.com/irusei/clippi-libobs-rs.git", package = "libobs-window-helper" }
-
-tokio = { version = "1", features = ["full"] }
-wmi = "0.18.4"
 dirs = "6.0.0"
+tokio = { version = "1", features = ["full"] }
 regex = "1.12.3"
 device_query = "4.0.1"
 uuid = {

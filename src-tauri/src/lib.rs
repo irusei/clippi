@@ -1,9 +1,8 @@
-use std::{path::PathBuf, sync::{LazyLock, Mutex}};
+use std::{path::PathBuf, sync::{LazyLock, Mutex}, process::Command};
 
 use tauri::{AppHandle, Emitter, Manager, menu::{Menu, MenuItem}, tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}};
 
 use crate::{integrations::discord::rpc, storage::{clips::Clip, games::DetectedGameData, settings::{Settings, get_clipping_folder}}};
-use wmi::WMIConnection;
 
 use std::thread::spawn;
 
@@ -14,7 +13,7 @@ pub mod integrations;
 pub mod recorder;
 pub mod detector;
 pub mod sound;
-pub mod windows_utils;
+pub mod platform_utils;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 static APP_HANDLE: LazyLock<Mutex<Option<AppHandle>>> = LazyLock::new(|| {
@@ -50,15 +49,21 @@ fn get_clips(handle: AppHandle) -> Vec<Clip> {
 #[tauri::command]
 fn open_clip_in_explorer(clip: Clip) {
     let path = PathBuf::from(clip.path);
-
     #[cfg(target_os = "windows")]
     {
-        use std::process::Command;
-
         Command::new("explorer")
             .args(["/select,", path.to_str().unwrap()])
             .spawn()
             .map_err(|e| e.to_string()).expect("Failed to open clip");
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let folder = path.parent().unwrap();
+        Command::new("xdg-open")
+            .arg(folder)
+            .spawn()
+            .map_err(|e| e.to_string())
+            .expect("Failed to open folder");
     }
 }
 
@@ -116,20 +121,7 @@ fn edit_game(old_game: DetectedGameData, new_game: DetectedGameData) {
 
 #[tauri::command]
 fn list_processes() -> Vec<String> {
-    let wmi_con = match WMIConnection::new() {
-        Ok(con) => con,
-        Err(_) => return vec![],
-    };
-    let processes: Result<Vec<watcher::Process>, _> = wmi_con
-        .raw_query("SELECT Name, ProcessId FROM Win32_Process");
-    let mut names: Vec<String> = match processes {
-        Ok(procs) => procs.iter().map(|p| p.name.clone()).collect(),
-        Err(_) => return vec![],
-    };
-    
-    names.sort();
-    names.dedup();
-    names
+    platform_utils::list_processes()
 }
 
 #[tauri::command]
@@ -142,6 +134,19 @@ fn rename_clip(clip: Clip, new_title: String) {
 fn get_current_game() -> Option<DetectedGameData> {
     watcher::get_current_game()
 }
+
+#[cfg(target_os = "linux")]
+#[tauri::command]
+fn get_platform() -> String {
+    "linux".to_string()
+}
+
+#[cfg(target_os = "windows")]
+#[tauri::command]
+fn get_platform() -> String {
+    "windows".to_string()
+}
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -194,7 +199,7 @@ pub fn run() {
             }
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_clips, open_clip_in_explorer, trim_clip, delete_clip, rename_clip, get_settings, set_settings, get_games, add_game, remove_game, edit_game, get_current_game, list_processes])
+        .invoke_handler(tauri::generate_handler![get_clips, open_clip_in_explorer, trim_clip, delete_clip, rename_clip, get_settings, set_settings, get_games, add_game, remove_game, edit_game, get_current_game, list_processes, get_platform])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

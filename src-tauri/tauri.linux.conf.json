@@ -1,0 +1,36 @@
+{
+    "$schema": "https://schema.tauri.app/config/2",
+    "productName": "clippi",
+    "version": "0.1.0",
+    "identifier": "com.iru.clippi",
+    "build": {
+        "beforeDevCommand": "npm run dev",
+        "devUrl": "http://localhost:1420",
+        "beforeBuildCommand": "npm run build",
+        "frontendDist": "../dist"
+    },
+    "bundle": {
+        "targets": ["appimage", "deb"],
+        "resources": [
+            "assets/bookmark.wav"
+        ]
+    },
+    "app": {
+        "windows": [
+            {
+                "title": "clippi",
+                "width": 850,
+                "height": 600,
+                "maximizable": false,
+                "resizable": false
+            }
+        ],
+        "security": {
+            "csp": null,
+            "assetProtocol": {
+                "enable": true,
+                "scope": ["**"]
+            }
+        }
+    }
+}

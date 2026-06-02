@@ -2,9 +2,16 @@ use std::{sync::{LazyLock, Mutex}, thread, time::{Duration, SystemTime}};
 
 use device_query::{DeviceQuery, Keycode, device_state};
 use serde::{Deserialize};
-use wmi::{WMIConnection};
 
-use crate::{sound, announce_current_game, detector::detector, integrations::discord::rpc, recorder::recorder::{RecordingSettings, record}, storage::{clips::{Bookmark, store_clip}, games::DetectedGameData, settings::{get_clipping_folder, get_settings}}, windows_utils::{get_titles, wait_for_window}};
+use crate::{sound, announce_current_game, detector::detector, integrations::discord::rpc, recorder::recorder::{RecordingSettings, record}, storage::{clips::{Bookmark, store_clip}, games::DetectedGameData, settings::{get_clipping_folder, get_settings}}};
+
+use crate::platform_utils::{rescan_processes};
+
+#[cfg(target_os = "windows")]
+use crate::platform_utils::{get_titles, wait_for_window};
+#[cfg(target_os = "windows")]
+use wmi::WMIConnection;
+
 
 
 #[derive(Deserialize, Debug)]
@@ -132,16 +139,6 @@ pub fn get_action_count() -> Vec<usize> {
     return INPUT_ACTION_COUNT.lock().unwrap().clone();
 }
 
-pub fn rescan_processes(wmi_con: &WMIConnection) {
-    if get_current_game().is_none() {
-        let processes: Vec<Process> = wmi_con.raw_query("SELECT Name, ProcessId FROM Win32_Process").unwrap();
-
-        for proc in processes {
-            handle_process(proc);
-        }
-    }
-}
-
 pub fn handle_process(proc: Process) {
     if get_current_game().is_some() {
         return;
@@ -151,84 +148,101 @@ pub fn handle_process(proc: Process) {
     let is_game: bool = detector::process_exists(&filename);
     if is_game {
         // wait for window
-        println!("FOUND GAME: {}", &filename);
-        match wait_for_window(&filename, 45) { 
-            Ok(_) => {
-                let titles = get_titles(proc.process_id);
-                if let Some(detected_game) = detector::get_detected_game(&filename, &titles) {
-                    let w_name = filename.clone();
-                    
-                    let settings = get_settings();
-
-                    let recorder_settings = RecordingSettings {
-                        resolution: settings.resolution,
-                        framerate: settings.framerate,
-                        bitrate: settings.bitrate,
-                        folder: get_clipping_folder(),
-                        window_capture: detected_game.use_window_capture,
-                        encoder: settings.encoder,
-
-                        capture_desktop_audio: settings.capture_desktop_audio,
-                        capture_mic: settings.capture_mic
-                    };
-
-                    let w_name = w_name.clone();         
-                    let recorder_settings = recorder_settings.clone();
-                    let detected_game_cloned = detected_game.clone();
-
-                    // announce to frontend that we're playin a game
-                    announce_current_game(Some(&detected_game));
-
-                    // discord rpc stuff
-                    set_current_game(Some(detected_game.clone()));
-                    if settings.discord_rpc_enabled {
-                        rpc::set_activity(&detected_game);
-                    }
-
-                    // start input monitoring before recording begins
-                    start_input_monitoring();
-
-                    if let Err(e) = record(w_name, &detected_game, recorder_settings,
-                        Box::new(move |clip_path| {
-                            let bookmarks = get_current_bookmarks();
-                            let action_count = get_action_count();
-
-                            set_current_game(None);
-                            set_recording_start_time(None);
-                            announce_current_game(None);
-                            stop_input_monitoring();
-                            rpc::clear_activity();
-
-                            store_clip(crate::storage::clips::ClipType::Recording, clip_path, detected_game_cloned, bookmarks, action_count);
-                        })
-                    ) {
-                        eprintln!("An error occurred while recording: {:?}", e);
-
-                        set_current_game(None);
-                        set_recording_start_time(None);
-                        announce_current_game(None);
-                        stop_input_monitoring();
-                        rpc::clear_activity();
-                    }
+        // linux support doesn't have window waiting implemented yet, so we check on a os case basis
+        let mut titles: Vec<String> = vec![];
+        #[cfg(target_os = "windows")]
+        {
+            match wait_for_window(&filename, 45) {
+                Ok(_) => {
+                    titles = get_titles(proc.process_id);
                 }
-            },
-            Err(_) => println!("failed to wait for window for process {}, unable to record", &filename)
+                Err(_) => println!("failed to wait for window for process {}, unable to record", &filename)
+            }
+        }
+
+        println!("FOUND GAME: {}", &filename);
+        if let Some(detected_game) = detector::get_detected_game(&filename, &titles) {
+            let w_name = filename.clone();
+
+            let settings = get_settings();
+
+            let recorder_settings = RecordingSettings {
+                resolution: settings.resolution,
+                framerate: settings.framerate,
+                bitrate: settings.bitrate,
+                folder: get_clipping_folder(),
+                window_capture: detected_game.use_window_capture,
+                encoder: settings.encoder,
+
+                capture_desktop_audio: settings.capture_desktop_audio,
+                capture_mic: settings.capture_mic
+            };
+
+            let w_name = w_name.clone();
+            let recorder_settings = recorder_settings.clone();
+            let detected_game_cloned = detected_game.clone();
+
+            // announce to frontend that we're playin a game
+            announce_current_game(Some(&detected_game));
+
+            // discord rpc stuff
+            set_current_game(Some(detected_game.clone()));
+            if settings.discord_rpc_enabled {
+                rpc::set_activity(&detected_game);
+            }
+
+            // start input monitoring before recording begins
+            start_input_monitoring();
+
+            if let Err(e) = record(w_name, &detected_game, recorder_settings,
+                Box::new(move |clip_path| {
+                    thread::sleep(Duration::from_secs(1));
+                    let bookmarks = get_current_bookmarks();
+                    let action_count = get_action_count();
+
+                    set_current_game(None);
+                    set_recording_start_time(None);
+                    announce_current_game(None);
+                    stop_input_monitoring();
+                    rpc::clear_activity();
+
+                    store_clip(crate::storage::clips::ClipType::Recording, clip_path, detected_game_cloned, bookmarks, action_count);
+                })
+            ) {
+                eprintln!("An error occurred while recording: {:?}", e);
+
+                set_current_game(None);
+                set_recording_start_time(None);
+                announce_current_game(None);
+                stop_input_monitoring();
+                rpc::clear_activity();
+            }
         }
     }
 }
 #[tokio::main]
 pub async fn init() {
     match tokio::task::spawn_blocking(|| {
-        let wmi_con = WMIConnection::new().expect("WMI Connection Failed");
+        #[cfg(target_os = "windows")]
+        {
+            let wmi_con = WMIConnection::new().expect("WMI Connection Failed");
 
-        // get existing processes
-        // i feel like doing this in a loop is less messy than the window create event, because
-        // if i would need to rescan games on a game chance in the games storage
-        // it would require me to spawn countless threads, whereas this could just update dynamically?
-        loop {
-            rescan_processes(&wmi_con);
+            // get existing processes
+            // i feel like doing this in a loop is less messy than the window create event, because
+            // if i would need to rescan games on a game chance in the games storage
+            // it would require me to spawn countless threads, whereas this could just update dynamically?
+            loop {
+                rescan_processes(&wmi_con);
 
-            thread::sleep(Duration::from_secs(1));
+                thread::sleep(Duration::from_secs(1));
+            }
+        }
+        #[cfg(target_os = "linux")]
+        {
+            loop {
+                rescan_processes();
+                thread::sleep(Duration::from_secs(1));
+            }
         }
     }).await {
         Ok(_) => return,

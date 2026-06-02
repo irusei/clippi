@@ -2,6 +2,10 @@ use std::{path::PathBuf, process::Command};
 
 use crate::ffmpeg::ffprobe;
 
+#[cfg(target_os="windows")]
+const FFMPEG_NAME: &str = "./ffmpeg.exe";
+#[cfg(target_os="linux")]
+const FFMPEG_NAME: &str = "ffmpeg";
 
 pub fn extract_middle_frame(
     input: &PathBuf,
@@ -10,7 +14,7 @@ pub fn extract_middle_frame(
     let duration = ffprobe::duration(input);
     let midpoint = duration / 2.0;
 
-    let status = Command::new("./ffmpeg.exe")
+    let status = Command::new(FFMPEG_NAME)
         .args([
             "-ss",
             &midpoint.to_string(),
@@ -46,7 +50,7 @@ pub fn trim_clip(
         return Err("Invalid trim range".into());
     }
 
-    let status = Command::new("./ffmpeg.exe")
+    let status = Command::new(FFMPEG_NAME)
         .args([
             "-ss",
             &start.to_string(),

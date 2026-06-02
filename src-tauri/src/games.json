@@ -111,7 +111,7 @@
     "name": "KovaaK's",
     "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/824270/ed2df8e3157c3fe9b62d0b72bdcd20d4e674be32.jpg",
     "executables": [
-      "FPSAimTrainer.exe"
+      "FPSAimTrainer-Win64-Shipping.exe"
     ],
     "use_window_capture": false,
     "title_regex": []
