@@ -2,9 +2,9 @@ use std::{path::PathBuf, process::Command};
 
 use crate::ffmpeg::ffprobe;
 
-#[cfg(target_os="windows")]
+#[cfg(target_os = "windows")]
 const FFMPEG_NAME: &str = "./ffmpeg.exe";
-#[cfg(target_os="linux")]
+#[cfg(target_os = "linux")]
 const FFMPEG_NAME: &str = "ffmpeg";
 
 pub fn extract_middle_frame(

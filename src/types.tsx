@@ -7,8 +7,8 @@ export interface DetectedGame {
 }
 
 export interface Bookmark {
-  name: string,
-  timestamp: number
+  name: string;
+  timestamp: number;
 }
 export interface VodClip {
   id: string;
@@ -29,11 +29,12 @@ export type VodEncoder = "X264" | "H264" | "HEVC" | "AV1";
 
 export interface Settings {
   clip_path: string;
-  resolution: [number, number],
-  framerate: number,
-  bitrate: number,
-  encoder: VodEncoder
-  capture_desktop_audio: boolean,
-  capture_mic: boolean,
-  discord_rpc_enabled: boolean
+  resolution: [number, number];
+  framerate: number;
+  bitrate: number;
+  encoder: VodEncoder;
+  capture_desktop_audio: boolean;
+  capture_mic: boolean;
+  discord_rpc_enabled: boolean;
+  windows_autostart: boolean;
 }

@@ -3,12 +3,9 @@
 
 use std::env;
 
-
 fn set_cwd_to_exe_dir() -> std::io::Result<()> {
     let exe_path = env::current_exe()?;
-    let exe_dir = exe_path
-        .parent()
-        .expect("exe has no parent directory");
+    let exe_dir = exe_path.parent().expect("exe has no parent directory");
 
     env::set_current_dir(exe_dir)?;
     Ok(())

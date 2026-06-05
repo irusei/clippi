@@ -1,9 +1,16 @@
-use std::{fs::{self, File, OpenOptions}, io::Write, path::PathBuf, sync::{LazyLock, Mutex}};
+use std::{
+    fs::{self, File, OpenOptions},
+    io::Write,
+    path::PathBuf,
+    sync::{LazyLock, Mutex},
+};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{integrations::discord::rpc, recorder::recorder::VodEncoder, storage::clips::reload_clips, watcher::get_current_game};
-
+use crate::{
+    integrations::discord::rpc, recorder::recorder::VodEncoder, storage::clips::reload_clips,
+    watcher::get_current_game,
+};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Settings {
@@ -20,11 +27,12 @@ pub struct Settings {
 
     #[serde(default)]
     pub discord_rpc_enabled: bool,
+    #[serde(default)]
+    pub windows_autostart: bool,
 }
 
-static SETTINGS: LazyLock<Mutex<Settings>> = LazyLock::new(|| {
-    Mutex::new(load_settings_from_file())
-});
+static SETTINGS: LazyLock<Mutex<Settings>> =
+    LazyLock::new(|| Mutex::new(load_settings_from_file()));
 
 pub fn get_settings() -> Settings {
     let settings_locked = SETTINGS.lock().unwrap();
@@ -57,6 +65,7 @@ fn load_settings_from_file() -> Settings {
                 capture_desktop_audio: false,
                 capture_mic: false,
                 discord_rpc_enabled: false,
+                windows_autostart: false,
             }
         }
         true => {
@@ -84,7 +93,9 @@ fn save_settings_to_file() {
         .open(&path)
         .expect("Failed to open settings.json");
 
-    settings_file.write_all(json.as_bytes()).expect("Failed to write settings.json");
+    settings_file
+        .write_all(json.as_bytes())
+        .expect("Failed to write settings.json");
 }
 
 pub fn get_clipping_folder() -> PathBuf {
@@ -110,6 +121,11 @@ pub fn set_settings(new_settings: Settings) {
         }
     }
 
+    // update autostart if changed
+    if new_settings.windows_autostart != old_settings.windows_autostart {
+        set_windows_autostart(new_settings.windows_autostart).unwrap();
+    }
+
     {
         let mut settings_locked = SETTINGS.lock().unwrap();
         *settings_locked = new_settings;
@@ -117,4 +133,32 @@ pub fn set_settings(new_settings: Settings) {
 
     save_settings_to_file();
     reload_clips();
+}
+
+#[cfg(target_os = "windows")]
+pub fn set_windows_autostart(autostart: bool) -> std::io::Result<()> {
+    use winreg::enums::{HKEY_CURRENT_USER, KEY_WRITE};
+    use winreg::RegKey;
+
+    let app_path = std::env::current_exe()?.to_string_lossy().into_owned();
+
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+
+    let run_key = hkcu.open_subkey_with_flags(
+        "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+        KEY_WRITE,
+    )?;
+
+    if autostart {
+        run_key.set_value("clippi", &format!("\"{}\"", app_path))?;
+    } else {
+        let _ = run_key.delete_value("clippi");
+    }
+
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn set_windows_autostart(_autostart: bool) -> std::io::Result<()> {
+    Ok(())
 }

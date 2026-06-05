@@ -1,24 +1,37 @@
-use std::{path::PathBuf, sync::{LazyLock, Mutex}, process::Command};
+use std::{
+    path::PathBuf,
+    process::Command,
+    sync::{LazyLock, Mutex},
+};
 
-use tauri::{AppHandle, Emitter, Manager, menu::{Menu, MenuItem}, tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}};
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    AppHandle, Emitter, Manager,
+};
 
-use crate::{integrations::discord::rpc, storage::{clips::Clip, games::DetectedGameData, settings::{Settings, get_clipping_folder}}};
+use crate::{
+    integrations::discord::rpc,
+    storage::{
+        clips::Clip,
+        games::DetectedGameData,
+        settings::{get_clipping_folder, Settings},
+    },
+};
 
 use std::thread::spawn;
 
-pub mod watcher;
-pub mod storage;
+pub mod detector;
 pub mod ffmpeg;
 pub mod integrations;
-pub mod recorder;
-pub mod detector;
-pub mod sound;
 pub mod platform_utils;
+pub mod recorder;
+pub mod sound;
+pub mod storage;
+pub mod watcher;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-static APP_HANDLE: LazyLock<Mutex<Option<AppHandle>>> = LazyLock::new(|| {
-    Mutex::new(None)
-});
+static APP_HANDLE: LazyLock<Mutex<Option<AppHandle>>> = LazyLock::new(|| Mutex::new(None));
 
 fn send_clips() {
     let handle = APP_HANDLE.lock().unwrap();
@@ -54,7 +67,8 @@ fn open_clip_in_explorer(clip: Clip) {
         Command::new("explorer")
             .args(["/select,", path.to_str().unwrap()])
             .spawn()
-            .map_err(|e| e.to_string()).expect("Failed to open clip");
+            .map_err(|e| e.to_string())
+            .expect("Failed to open clip");
     }
     #[cfg(target_os = "linux")]
     {
@@ -72,13 +86,17 @@ fn trim_clip(clip: Clip, start: f64, end: f64) -> bool {
     let mut output_path = get_clipping_folder();
     output_path.push(clip.path.file_name().unwrap());
 
-    let action_count = clip.action_count[(start.floor() as usize)..=(std::cmp::min(end.floor() as usize, clip.action_count.len()))].iter().cloned().collect::<Vec<usize>>();
+    let action_count = clip.action_count
+        [(start.floor() as usize)..=(std::cmp::min(end.floor() as usize, clip.action_count.len()))]
+        .iter()
+        .cloned()
+        .collect::<Vec<usize>>();
 
     match ffmpeg::ffmpeg::trim_clip(&clip.path, &output_path, start, end) {
         Ok(_) => {
             storage::clips::store_new_trim(output_path, clip.game, action_count);
             true
-        },
+        }
         Err(_) => false,
     }
 }
@@ -118,7 +136,6 @@ fn edit_game(old_game: DetectedGameData, new_game: DetectedGameData) {
     storage::games::edit_game(old_game, new_game);
 }
 
-
 #[tauri::command]
 fn list_processes() -> Vec<String> {
     platform_utils::list_processes()
@@ -129,38 +146,24 @@ fn rename_clip(clip: Clip, new_title: String) {
     storage::clips::rename_clip(clip, new_title);
 }
 
-
 #[tauri::command]
 fn get_current_game() -> Option<DetectedGameData> {
     watcher::get_current_game()
 }
 
-#[cfg(target_os = "linux")]
-#[tauri::command]
-fn get_platform() -> String {
-    "linux".to_string()
-}
-
-#[cfg(target_os = "windows")]
-#[tauri::command]
-fn get_platform() -> String {
-    "windows".to_string()
-}
-
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     spawn(|| {
-        rpc::init();    
+        rpc::init();
         watcher::init();
     });
     tauri::Builder::default()
+        .plugin(tauri_plugin_os::init())
         .setup(|app| {
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
 
-            // 2. Budowa ikony zasobnika
             let _tray = TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
@@ -198,8 +201,30 @@ pub fn run() {
                 window.hide().unwrap();
             }
         })
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            let opt_window = app.get_webview_window("main");
+
+            if let Some(window) = opt_window {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_clips, open_clip_in_explorer, trim_clip, delete_clip, rename_clip, get_settings, set_settings, get_games, add_game, remove_game, edit_game, get_current_game, list_processes, get_platform])
+        .invoke_handler(tauri::generate_handler![
+            get_clips,
+            open_clip_in_explorer,
+            trim_clip,
+            delete_clip,
+            rename_clip,
+            get_settings,
+            set_settings,
+            get_games,
+            add_game,
+            remove_game,
+            edit_game,
+            get_current_game,
+            list_processes,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -1,18 +1,31 @@
-use std::{sync::{LazyLock, Mutex}, thread, time::{Duration, SystemTime}};
+use std::{
+    sync::{LazyLock, Mutex},
+    thread,
+    time::{Duration, SystemTime},
+};
 
-use device_query::{DeviceQuery, Keycode, device_state};
-use serde::{Deserialize};
+use device_query::{device_state, DeviceQuery, Keycode};
+use serde::Deserialize;
 
-use crate::{sound, announce_current_game, detector::detector, integrations::discord::rpc, recorder::recorder::{RecordingSettings, record}, storage::{clips::{Bookmark, store_clip}, games::DetectedGameData, settings::{get_clipping_folder, get_settings}}};
+use crate::{
+    announce_current_game,
+    detector::detector,
+    integrations::discord::rpc,
+    recorder::recorder::{record, RecordingSettings},
+    sound,
+    storage::{
+        clips::{store_clip, Bookmark},
+        games::DetectedGameData,
+        settings::{get_clipping_folder, get_settings},
+    },
+};
 
-use crate::platform_utils::{rescan_processes};
+use crate::platform_utils::rescan_processes;
 
 #[cfg(target_os = "windows")]
 use crate::platform_utils::{get_titles, wait_for_window};
 #[cfg(target_os = "windows")]
 use wmi::WMIConnection;
-
-
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
@@ -21,25 +34,17 @@ pub struct Process {
     pub process_id: u32,
 }
 
-static RECORDING_START_TIME: LazyLock<Mutex<Option<SystemTime>>> = LazyLock::new(|| {
-    Mutex::new(None)
-});
+static RECORDING_START_TIME: LazyLock<Mutex<Option<SystemTime>>> =
+    LazyLock::new(|| Mutex::new(None));
 
-static CURRENT_GAME: LazyLock<Mutex<Option<DetectedGameData>>> = LazyLock::new(|| {
-    Mutex::new(None)
-});
+static CURRENT_GAME: LazyLock<Mutex<Option<DetectedGameData>>> = LazyLock::new(|| Mutex::new(None));
 
-static CURRENT_BOOKMARKS: LazyLock<Mutex<Vec<Bookmark>>> = LazyLock::new(|| {
-    Mutex::new(vec![])
-});
+static CURRENT_BOOKMARKS: LazyLock<Mutex<Vec<Bookmark>>> = LazyLock::new(|| Mutex::new(vec![]));
 
-static INPUT_ACTION_COUNT: LazyLock<Mutex<Vec<usize>>> = LazyLock::new(|| {
-    Mutex::new(Vec::from([0]))
-});
+static INPUT_ACTION_COUNT: LazyLock<Mutex<Vec<usize>>> =
+    LazyLock::new(|| Mutex::new(Vec::from([0])));
 
-static INPUT_MONITOR_RUNNING: LazyLock<Mutex<bool>> = LazyLock::new(|| {
-    Mutex::new(false)
-});
+static INPUT_MONITOR_RUNNING: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(false));
 
 pub fn get_current_game() -> Option<DetectedGameData> {
     return CURRENT_GAME.lock().unwrap().clone();
@@ -62,7 +67,7 @@ pub fn add_bookmark(name: String) {
     if let Some(start_time) = get_recording_start_time() {
         CURRENT_BOOKMARKS.lock().unwrap().push(Bookmark {
             name,
-            timestamp: start_time.elapsed().unwrap_or(Duration::ZERO).as_millis()
+            timestamp: start_time.elapsed().unwrap_or(Duration::ZERO).as_millis(),
         })
     }
 }
@@ -79,7 +84,8 @@ pub fn start_input_monitoring() {
         let device_state = device_state::DeviceState::new();
         let mut f8_debounce = false;
 
-        let mut previous_keys: std::collections::HashSet<Keycode> = std::collections::HashSet::new();
+        let mut previous_keys: std::collections::HashSet<Keycode> =
+            std::collections::HashSet::new();
         let mut previous_mb: Vec<bool> = Vec::new();
         let mut last_action_push = SystemTime::now();
         let mut actions_this_second = 0;
@@ -106,7 +112,12 @@ pub fn start_input_monitoring() {
                 f8_debounce = false;
             }
 
-            let key_difference = keys.clone().into_iter().filter(|x| !previous_keys.contains(x)).collect::<Vec<Keycode>>().len();
+            let key_difference = keys
+                .clone()
+                .into_iter()
+                .filter(|x| !previous_keys.contains(x))
+                .collect::<Vec<Keycode>>()
+                .len();
             actions_this_second += key_difference;
             previous_keys = keys.into_iter().collect();
 
@@ -114,7 +125,9 @@ pub fn start_input_monitoring() {
                 let previous_option = previous_mb.get(i);
                 let now_option = mouse_buttons.get(i);
 
-                if previous_option.is_some_and(|x| x == &false) && now_option.is_some_and(|x| x == &true) {
+                if previous_option.is_some_and(|x| x == &false)
+                    && now_option.is_some_and(|x| x == &true)
+                {
                     actions_this_second += 1;
                 }
             }
@@ -143,7 +156,7 @@ pub fn handle_process(proc: Process) {
     if get_current_game().is_some() {
         return;
     }
-    
+
     let filename = proc.name;
     let is_game: bool = detector::process_exists(&filename);
     if is_game {
@@ -156,7 +169,10 @@ pub fn handle_process(proc: Process) {
                 Ok(_) => {
                     titles = get_titles(proc.process_id);
                 }
-                Err(_) => println!("failed to wait for window for process {}, unable to record", &filename)
+                Err(_) => println!(
+                    "failed to wait for window for process {}, unable to record",
+                    &filename
+                ),
             }
         }
 
@@ -175,7 +191,7 @@ pub fn handle_process(proc: Process) {
                 encoder: settings.encoder,
 
                 capture_desktop_audio: settings.capture_desktop_audio,
-                capture_mic: settings.capture_mic
+                capture_mic: settings.capture_mic,
             };
 
             let w_name = w_name.clone();
@@ -194,7 +210,10 @@ pub fn handle_process(proc: Process) {
             // start input monitoring before recording begins
             start_input_monitoring();
 
-            if let Err(e) = record(w_name, &detected_game, recorder_settings,
+            if let Err(e) = record(
+                w_name,
+                &detected_game,
+                recorder_settings,
                 Box::new(move |clip_path| {
                     thread::sleep(Duration::from_secs(1));
                     let bookmarks = get_current_bookmarks();
@@ -206,8 +225,14 @@ pub fn handle_process(proc: Process) {
                     stop_input_monitoring();
                     rpc::clear_activity();
 
-                    store_clip(crate::storage::clips::ClipType::Recording, clip_path, detected_game_cloned, bookmarks, action_count);
-                })
+                    store_clip(
+                        crate::storage::clips::ClipType::Recording,
+                        clip_path,
+                        detected_game_cloned,
+                        bookmarks,
+                        action_count,
+                    );
+                }),
             ) {
                 eprintln!("An error occurred while recording: {:?}", e);
 
@@ -244,8 +269,10 @@ pub async fn init() {
                 thread::sleep(Duration::from_secs(1));
             }
         }
-    }).await {
+    })
+    .await
+    {
         Ok(_) => return,
-        Err(e) => println!("watcher thread crashed: {}", e)
+        Err(e) => println!("watcher thread crashed: {}", e),
     }
 }

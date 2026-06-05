@@ -1,7 +1,10 @@
-use std::{fs::{self, File, OpenOptions}, io::Write, sync::{LazyLock, Mutex}};
+use std::{
+    fs::{self, File, OpenOptions},
+    io::Write,
+    sync::{LazyLock, Mutex},
+};
 
 use serde::{Deserialize, Serialize};
-
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct DetectedGameData {
@@ -16,9 +19,8 @@ pub struct DetectedGameData {
     pub title_regex: Vec<String>,
 }
 
-static GAMES: LazyLock<Mutex<Vec<DetectedGameData>>> = LazyLock::new(|| {
-    Mutex::new(load_games_from_file())
-});
+static GAMES: LazyLock<Mutex<Vec<DetectedGameData>>> =
+    LazyLock::new(|| Mutex::new(load_games_from_file()));
 
 pub fn get_games() -> Vec<DetectedGameData> {
     let settings_locked = GAMES.lock().unwrap();
@@ -55,10 +57,15 @@ pub fn edit_game(old_game: DetectedGameData, new_game: DetectedGameData) {
     save_games_to_file();
 }
 
-fn check_for_diff(base_games: Vec<DetectedGameData>, games_file_content: Vec<DetectedGameData>) -> Vec<DetectedGameData> {
+fn check_for_diff(
+    base_games: Vec<DetectedGameData>,
+    games_file_content: Vec<DetectedGameData>,
+) -> Vec<DetectedGameData> {
     let mut new_gfc = games_file_content.clone();
     for base_game in base_games {
-        let position = games_file_content.iter().position(|file_game| file_game.name == base_game.name);
+        let position = games_file_content
+            .iter()
+            .position(|file_game| file_game.name == base_game.name);
         if let Some(position) = position {
             // this has its drawbacks, but idc
             new_gfc[position] = base_game;
@@ -82,14 +89,14 @@ fn load_games_from_file() -> Vec<DetectedGameData> {
 
     let exists = path.exists();
 
-    let games = serde_json::from_str::<Vec<DetectedGameData>>(include_str!("../games.json")).expect("Failed to deserialize games.json");
+    let games = serde_json::from_str::<Vec<DetectedGameData>>(include_str!("../games.json"))
+        .expect("Failed to deserialize games.json");
     match exists {
-        false => {
-            games
-        }
+        false => games,
         true => {
             let file = File::open(&path).expect("Failed to open games.json");
-            let games_file_content: Vec<DetectedGameData> = serde_json::from_reader(file).expect("Failed to deserialize json");
+            let games_file_content: Vec<DetectedGameData> =
+                serde_json::from_reader(file).expect("Failed to deserialize json");
             check_for_diff(games, games_file_content)
         }
     }
@@ -113,5 +120,7 @@ fn save_games_to_file() {
         .open(&path)
         .expect("Failed to open settings.json");
 
-    games_file.write_all(json.as_bytes()).expect("Failed to write games.json");
+    games_file
+        .write_all(json.as_bytes())
+        .expect("Failed to write games.json");
 }

@@ -23,7 +23,9 @@ windows = { version = "0.58", features = [
     "Win32_Foundation",
     "Win32_UI_WindowsAndMessaging",
     "Win32_System_Threading",
+    "Win32_Security",
 ] }
+winreg = "0.56.0"
 wmi = "0.18.4"
 libobs-simple = { git = "https://github.com/irusei/clippi-libobs-rs.git", package = "libobs-simple", features = ["window-list"] }
 libobs-wrapper = { git = "https://github.com/irusei/clippi-libobs-rs.git", package = "libobs-wrapper" }
@@ -31,6 +33,9 @@ libobs-window-helper = { git = "https://github.com/irusei/clippi-libobs-rs.git",
 
 [target.'cfg(target_os = "linux")'.dependencies]
 sysinfo = "0.39.2"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-single-instance = "2"
 
 [dependencies]
 tauri = { version = "2", features = ["protocol-asset", "tray-icon", "image-png"] }
@@ -51,3 +56,4 @@ uuid = {
 discord-rich-presence = "1.1.0"
 rodio = "0.22.2"
 chrono = "0.4"
+tauri-plugin-os = "2"

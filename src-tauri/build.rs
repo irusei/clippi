@@ -11,7 +11,7 @@ fn main() {
         .arg("--release")
         .current_dir(installer_dir)
         .status()
-        .expect("failed to run cargo build for installer"); 
+        .expect("failed to run cargo build for installer");
 
     if !status.success() {
         panic!("building installer failed");

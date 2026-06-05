@@ -1,22 +1,25 @@
 #[cfg(target_os = "windows")]
-use std::{path::Path, thread::sleep, time::{Duration, Instant}};
+use std::{
+    path::Path,
+    thread::sleep,
+    time::{Duration, Instant},
+};
 
 #[cfg(target_os = "linux")]
 use sysinfo::System;
 #[cfg(target_os = "windows")]
-use windows::Win32::Foundation::{HWND, LPARAM, BOOL};
+use windows::Win32::Foundation::{BOOL, HWND, LPARAM};
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{
-    EnumWindows, GetWindowThreadProcessId,
-    GetWindowTextLengthW, GetWindowTextW,
+    EnumWindows, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId,
 };
 #[cfg(target_os = "windows")]
-use wmi::{WMIConnection};
+use wmi::WMIConnection;
 
 #[cfg(target_os = "windows")]
 use libobs_window_helper::WindowInfo;
 
-use crate::watcher::{Process, get_current_game, handle_process};
+use crate::watcher::{get_current_game, handle_process, Process};
 
 #[cfg(target_os = "windows")]
 pub fn find_window_by_exe<'a>(
@@ -34,17 +37,26 @@ pub fn find_window_by_exe<'a>(
 }
 
 #[cfg(target_os = "windows")]
-pub fn wait_for_window(window_exe_name: &str, timeout_secs: u64) -> Result<WindowInfo, anyhow::Error> {
+pub fn wait_for_window(
+    window_exe_name: &str,
+    timeout_secs: u64,
+) -> Result<WindowInfo, anyhow::Error> {
     let start = Instant::now();
     loop {
-        let windows = libobs_window_helper::get_all_windows(libobs_window_helper::WindowSearchMode::IncludeMinimized)?;
-        
+        let windows = libobs_window_helper::get_all_windows(
+            libobs_window_helper::WindowSearchMode::IncludeMinimized,
+        )?;
+
         if let Some(window) = find_window_by_exe(&windows, window_exe_name) {
             return Ok(window.clone());
         }
 
         if start.elapsed() > Duration::from_secs(timeout_secs) {
-            return Err(anyhow::anyhow!("no window found matching '{}' after {} seconds", window_exe_name, timeout_secs));
+            return Err(anyhow::anyhow!(
+                "no window found matching '{}' after {} seconds",
+                window_exe_name,
+                timeout_secs
+            ));
         }
 
         sleep(Duration::from_millis(100));
@@ -92,12 +104,11 @@ pub fn get_titles(pid: u32) -> Vec<String> {
     };
 
     unsafe {
-       let _ = EnumWindows(Some(enum_proc), LPARAM(&mut ctx as *mut _ as isize));
+        let _ = EnumWindows(Some(enum_proc), LPARAM(&mut ctx as *mut _ as isize));
     }
 
     ctx.titles
 }
-
 
 #[cfg(target_os = "linux")]
 pub fn get_titles(_pid: u32) -> Vec<String> {
@@ -107,7 +118,9 @@ pub fn get_titles(_pid: u32) -> Vec<String> {
 #[cfg(target_os = "windows")]
 pub fn rescan_processes(wmi_con: &WMIConnection) {
     if get_current_game().is_none() {
-        let processes: Vec<Process> = wmi_con.raw_query("SELECT Name, ProcessId FROM Win32_Process").unwrap();
+        let processes: Vec<Process> = wmi_con
+            .raw_query("SELECT Name, ProcessId FROM Win32_Process")
+            .unwrap();
 
         for proc in processes {
             handle_process(proc);
@@ -119,7 +132,11 @@ pub fn rescan_processes(wmi_con: &WMIConnection) {
 pub fn helper_get_processes() -> Vec<Process> {
     let mut processes: Vec<Process> = vec![];
     let mut sys = System::new_all();
-    sys.refresh_processes_specifics(sysinfo::ProcessesToUpdate::All, true, sysinfo::ProcessRefreshKind::nothing().without_tasks());
+    sys.refresh_processes_specifics(
+        sysinfo::ProcessesToUpdate::All,
+        true,
+        sysinfo::ProcessRefreshKind::nothing().without_tasks(),
+    );
 
     for (pid, proc) in sys.processes() {
         use std::path::Path;
@@ -128,7 +145,11 @@ pub fn helper_get_processes() -> Vec<Process> {
             continue;
         }
 
-        let mut proc_name = Path::new(proc.cmd().get(0).unwrap()).file_name().unwrap_or_default().to_string_lossy().to_string();
+        let mut proc_name = Path::new(proc.cmd().get(0).unwrap())
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
         // handle wine games with their weird windows pathing
         if proc_name.ends_with(".exe") {
             match proc_name.split("\\").last() {
@@ -164,13 +185,13 @@ pub fn list_processes() -> Vec<String> {
         Ok(con) => con,
         Err(_) => return vec![],
     };
-    let processes: Result<Vec<Process>, _> = wmi_con
-        .raw_query("SELECT Name, ProcessId FROM Win32_Process");
+    let processes: Result<Vec<Process>, _> =
+        wmi_con.raw_query("SELECT Name, ProcessId FROM Win32_Process");
     let mut names: Vec<String> = match processes {
         Ok(procs) => procs.iter().map(|p| p.name.clone()).collect(),
         Err(_) => return vec![],
     };
-    
+
     names.sort();
     names.dedup();
     names

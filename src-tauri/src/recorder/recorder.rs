@@ -1,32 +1,35 @@
 #[cfg(target_os = "windows")]
 use libobs_simple::{
-    output::{simple::{HardwarePreset, ObsContextSimpleExt, X264Preset}},
-    sources::{ObsObjectUpdater, ObsSourceBuilder}
+    output::simple::{HardwarePreset, ObsContextSimpleExt, X264Preset},
+    sources::{ObsObjectUpdater, ObsSourceBuilder},
 };
 
 #[cfg(target_os = "windows")]
 use libobs_simple::sources::windows::{ObsGameCaptureMode, ObsWindowCaptureMethod};
 
+#[cfg(target_os = "linux")]
+use crate::platform_utils;
+#[cfg(target_os = "windows")]
+use crate::platform_utils::{find_window_by_exe, wait_for_window};
+#[cfg(target_os = "windows")]
+use libobs_window_helper::WindowSearchMode;
 #[cfg(target_os = "windows")]
 use libobs_wrapper::{
     context::ObsContext,
-    data::{output::{ObsOutputTrait}, video::ObsVideoInfoBuilder},
+    data::{output::ObsOutputTrait, video::ObsVideoInfoBuilder},
     scenes::{SceneItemExtSceneTrait, SceneItemTrait},
     utils::{ObsPath, StartupInfo},
 };
-#[cfg(target_os = "windows")]
-use libobs_window_helper::{WindowSearchMode};
-#[cfg(target_os = "linux")]
-use crate::platform_utils;
 #[cfg(target_os = "linux")]
 use std::process::Command;
-#[cfg(target_os = "windows")]
-use crate::platform_utils::{find_window_by_exe, wait_for_window};
 
 use crate::{storage::games::DetectedGameData, watcher};
 
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, time::{Duration, SystemTime}};
+use std::{
+    path::PathBuf,
+    time::{Duration, SystemTime},
+};
 
 type OnFinishedCallback = Box<dyn FnOnce(PathBuf) + Send>;
 
@@ -35,7 +38,7 @@ pub enum VodEncoder {
     X264,
     H264,
     HEVC,
-    AV1
+    AV1,
 }
 
 #[derive(Debug, Clone)]
@@ -48,7 +51,7 @@ pub struct RecordingSettings {
     pub encoder: VodEncoder,
 
     pub capture_mic: bool,
-    pub capture_desktop_audio: bool
+    pub capture_desktop_audio: bool,
 }
 
 fn get_date_format() -> String {
@@ -60,7 +63,7 @@ pub fn record(
     window_exe_name: String,
     game: &DetectedGameData,
     settings: RecordingSettings,
-    on_finished: OnFinishedCallback
+    on_finished: OnFinishedCallback,
 ) -> anyhow::Result<()> {
     let date = get_date_format();
     let output_file = format!("{} - {}.mp4", date, game.name);
@@ -74,7 +77,11 @@ pub fn record(
     gpu_screen_recorder_args.push(String::from("-w"));
     gpu_screen_recorder_args.push(String::from("screen"));
 
-    let res = format!("{}x{}", settings.resolution.0.to_string(), settings.resolution.1.to_string());
+    let res = format!(
+        "{}x{}",
+        settings.resolution.0.to_string(),
+        settings.resolution.1.to_string()
+    );
     gpu_screen_recorder_args.push(String::from("-s"));
     gpu_screen_recorder_args.push(res);
 
@@ -97,18 +104,18 @@ pub fn record(
     match settings.encoder {
         VodEncoder::AV1 => {
             gpu_screen_recorder_args.push(String::from("av1"));
-        },
+        }
         VodEncoder::H264 => {
             gpu_screen_recorder_args.push(String::from("h264"));
-        },
+        }
         VodEncoder::HEVC => {
             gpu_screen_recorder_args.push(String::from("hevc"));
-        },
+        }
         VodEncoder::X264 => {
             gpu_screen_recorder_args.push(String::from("h264"));
             gpu_screen_recorder_args.push(String::from("-encoder"));
             gpu_screen_recorder_args.push(String::from("cpu"));
-        },
+        }
     };
 
     let mut output_input_list: Vec<&str> = vec![];
@@ -150,7 +157,9 @@ pub fn record(
 
         // Break if threshold seconds were elapsed for missing window
         if let Some(window_missing_start) = window_missing_start {
-            if window_missing_start.elapsed().unwrap_or(Duration::ZERO) >= window_missing_time_threshold {
+            if window_missing_start.elapsed().unwrap_or(Duration::ZERO)
+                >= window_missing_time_threshold
+            {
                 break;
             }
         }
@@ -169,16 +178,14 @@ pub fn record(
     on_finished(path);
 
     Ok(())
-
 }
 #[cfg(target_os = "windows")]
 pub fn record(
     window_exe_name: String,
     game: &DetectedGameData,
     settings: RecordingSettings,
-    on_finished: OnFinishedCallback
+    on_finished: OnFinishedCallback,
 ) -> anyhow::Result<()> {
-
     let date = get_date_format();
     let output_file = format!("{} - {}.mp4", date, game.name);
 
@@ -195,9 +202,8 @@ pub fn record(
         .fps_den(1)
         .build();
 
-    let startup_info = StartupInfo::new()
-        .set_video_info(video_info);
-    
+    let startup_info = StartupInfo::new().set_video_info(video_info);
+
     let mut ctx = ObsContext::new(startup_info)?;
 
     let window = wait_for_window(&window_exe_name, 45)?;
@@ -216,7 +222,8 @@ pub fn record(
             .create_updater()?
             .set_window_raw(&*window.obs_id)
             .set_capture_method(ObsWindowCaptureMethod::MethodWgc)
-            .set_capture_audio(!settings.capture_desktop_audio).unwrap()
+            .set_capture_audio(!settings.capture_desktop_audio)
+            .unwrap()
             .update()?;
 
         let item = scene.add_source(source)?;
@@ -232,10 +239,11 @@ pub fn record(
         source
             .create_updater()?
             .set_window_raw(&*window.obs_id)
-            .set_capture_audio(!settings.capture_desktop_audio).unwrap()
+            .set_capture_audio(!settings.capture_desktop_audio)
+            .unwrap()
             .set_anti_cheat_hook(true)
             .update()?;
-        
+
         let item = scene.add_source(source)?;
         item.fit_source_to_screen()?;
     }
@@ -244,22 +252,26 @@ pub fn record(
     if settings.capture_mic {
         let mic_source = ctx
             .source_builder::<libobs_simple::sources::windows::MicAudioSourceBuilder, _>(
-                "mic capture"
+                "mic capture",
             )?
             .build()?;
 
-        scene.add_source(mic_source).expect("failed to add mic source");
+        scene
+            .add_source(mic_source)
+            .expect("failed to add mic source");
     }
 
     // create desktop audio source
     if settings.capture_desktop_audio {
         let desktop_audio_source = ctx
             .source_builder::<libobs_simple::sources::windows::DesktopAudioSourceBuilder, _>(
-                "desktop audio capture"
+                "desktop audio capture",
             )?
             .build()?;
 
-        scene.add_source(desktop_audio_source).expect("failed to add desktop audio source");
+        scene
+            .add_source(desktop_audio_source)
+            .expect("failed to add desktop audio source");
     }
 
     let mut output_builder = ctx
@@ -269,19 +281,28 @@ pub fn record(
     // set encoder
     match settings.encoder {
         VodEncoder::H264 => {
-            output_builder = output_builder.hardware_encoder(libobs_simple::output::simple::HardwareCodec::H264, HardwarePreset::Quality);
-        },
+            output_builder = output_builder.hardware_encoder(
+                libobs_simple::output::simple::HardwareCodec::H264,
+                HardwarePreset::Quality,
+            );
+        }
         VodEncoder::HEVC => {
-            output_builder = output_builder.hardware_encoder(libobs_simple::output::simple::HardwareCodec::HEVC, HardwarePreset::Quality);
-        },
+            output_builder = output_builder.hardware_encoder(
+                libobs_simple::output::simple::HardwareCodec::HEVC,
+                HardwarePreset::Quality,
+            );
+        }
         VodEncoder::AV1 => {
-            output_builder = output_builder.hardware_encoder(libobs_simple::output::simple::HardwareCodec::AV1, HardwarePreset::Quality);
-        },
+            output_builder = output_builder.hardware_encoder(
+                libobs_simple::output::simple::HardwareCodec::AV1,
+                HardwarePreset::Quality,
+            );
+        }
         VodEncoder::X264 => {
             output_builder = output_builder.x264_encoder(X264Preset::VeryFast);
-        },
+        }
     }
-        
+
     let mut output = output_builder.build()?;
     output.start()?;
 
@@ -315,7 +336,9 @@ pub fn record(
 
         // Break if threshold seconds were elapsed for missing window
         if let Some(window_missing_start) = window_missing_start {
-            if window_missing_start.elapsed().unwrap_or(Duration::ZERO) >= window_missing_time_threshold {
+            if window_missing_start.elapsed().unwrap_or(Duration::ZERO)
+                >= window_missing_time_threshold
+            {
                 break;
             }
         }
