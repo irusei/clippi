@@ -13,7 +13,6 @@ interface ClipProps {
 export default function Clip({ clip, onClick }: ClipProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(clip.title);
-
   return (
     <div
       className={

@@ -86,7 +86,7 @@ export default function ClipTab() {
                 </h2>
               )}
             </div>
-            <div className="overflow-x-auto w-full flex flex-row gap-x-4 py-2 mb-2">
+            <div className="overflow-x-scroll w-full flex flex-row gap-x-4 py-2 mb-2">
               {uniqueGames.map(([game, count]) => (
                 <div
                   key={game.name}

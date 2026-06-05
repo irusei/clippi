@@ -36,7 +36,7 @@ pub struct Clip {
     pub id: uuid::Uuid,
     #[serde(default)]
     pub clip_type: ClipType,
-    pub path: PathBuf,
+    pub path: String,
     pub title: String,
     pub duration: u64,
     pub game: DetectedGameData,
@@ -56,6 +56,28 @@ fn split_last_dot(s: &str) -> Option<(&str, &str)> {
     let pos = s.rfind('.')?;
     let (left, right) = s.split_at(pos);
     Some((left, &right[1..]))
+}
+
+pub fn prefix_path(clip_path: &str) -> String {
+    let mut new_clip_path = clip_path.replace("\\", "/");
+
+    new_clip_path = new_clip_path
+        .strip_prefix("/")
+        .unwrap_or(clip_path)
+        .to_string();
+
+    let mut folder = get_clipping_folder();
+    folder.push(new_clip_path);
+    folder.to_string_lossy().to_string()
+}
+
+pub fn clean_path(clip_path: &str) -> String {
+    let folder = get_clipping_folder();
+    clip_path
+        .strip_prefix(&folder.to_string_lossy().to_string())
+        .unwrap_or(clip_path)
+        .to_string()
+        .replace("\\", "/")
 }
 
 fn load_from_file() -> Vec<Clip> {
@@ -137,12 +159,12 @@ pub fn store_clip(
         clips_locked.push(Clip {
             id: uuid::Uuid::new_v4(),
             clip_type: clip_type,
-            path: new_path,
+            path: clean_path(&new_path.to_string_lossy().to_string()),
             title: clip_filename.to_string_lossy().to_string(),
             duration: duration,
             game: game_data,
             size: file_size,
-            thumbnail: thumbnail.to_string_lossy().to_string(),
+            thumbnail: clean_path(&thumbnail.to_string_lossy().to_string()),
             bookmarks: bookmark_times,
             action_count: action_count,
             date: chrono::Local::now().format("%Y-%m-%d %H:%M").to_string(),
@@ -198,12 +220,12 @@ pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData, action_co
             clips_locked.push(Clip {
                 id: uuid::Uuid::new_v4(),
                 clip_type: ClipType::Clip,
-                path: new_path.clone(),
+                path: clean_path(&new_path.clone().to_string_lossy().to_string()),
                 title: new_path.file_name().unwrap().to_string_lossy().to_string(),
                 duration: duration,
                 game: game_data,
                 size: file_size,
-                thumbnail: thumbnail.to_string_lossy().to_string(),
+                thumbnail: clean_path(&thumbnail.to_string_lossy().to_string()),
                 bookmarks: Vec::new(), // reset bookmarks, maybe it's better if we don't?,
                 action_count: action_count,
                 date: chrono::Local::now().format("%Y-%m-%d %H:%M").to_string(),
@@ -215,8 +237,10 @@ pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData, action_co
 
 pub fn delete_clip(clip: Clip) {
     // delete clip from fs
-    fs::remove_file(&clip.path).expect("Failed to delete clip");
-    fs::remove_file(&clip.thumbnail).expect("Failed to delete clip thumbnail");
+    let clip_path = prefix_path(&clip.path);
+    let clip_thumbnail_path = prefix_path(&clip.thumbnail);
+    fs::remove_file(&clip_path).expect("Failed to delete clip");
+    fs::remove_file(&clip_thumbnail_path).expect("Failed to delete clip thumbnail");
 
     {
         let mut clips = CLIPS.lock().unwrap();

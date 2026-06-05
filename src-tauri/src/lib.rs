@@ -13,7 +13,7 @@ use tauri::{
 use crate::{
     integrations::discord::rpc,
     storage::{
-        clips::Clip,
+        clips::{clean_path, prefix_path, Clip},
         games::DetectedGameData,
         settings::{get_clipping_folder, Settings},
     },
@@ -36,8 +36,17 @@ static APP_HANDLE: LazyLock<Mutex<Option<AppHandle>>> = LazyLock::new(|| Mutex::
 fn send_clips() {
     let handle = APP_HANDLE.lock().unwrap();
     if let Some(handle) = &*handle {
-        let mut clips = storage::clips::get_clips();
-        clips.reverse();
+        // map every clip to proper path
+        let clips = storage::clips::get_clips()
+            .iter()
+            .rev()
+            .cloned()
+            .map(|mut clip| {
+                clip.thumbnail = prefix_path(&clip.thumbnail);
+                clip.path = prefix_path(&clip.path);
+                clip
+            })
+            .collect::<Vec<Clip>>();
         handle.emit("set_clips", clips).unwrap();
     }
 }
@@ -53,15 +62,22 @@ fn announce_current_game(game: Option<&DetectedGameData>) {
 fn get_clips(handle: AppHandle) -> Vec<Clip> {
     *APP_HANDLE.lock().unwrap() = Some(handle);
 
-    let mut clips = storage::clips::get_clips();
-    clips.reverse();
-
-    clips
+    // map every clip to proper path
+    storage::clips::get_clips()
+        .iter()
+        .rev()
+        .cloned()
+        .map(|mut clip| {
+            clip.thumbnail = prefix_path(&clip.thumbnail);
+            clip.path = prefix_path(&clip.path);
+            clip
+        })
+        .collect()
 }
 
 #[tauri::command]
 fn open_clip_in_explorer(clip: Clip) {
-    let path = PathBuf::from(clip.path);
+    let path = PathBuf::from(prefix_path(&clip.path));
     #[cfg(target_os = "windows")]
     {
         Command::new("explorer")
@@ -84,7 +100,11 @@ fn open_clip_in_explorer(clip: Clip) {
 #[tauri::command]
 fn trim_clip(clip: Clip, start: f64, end: f64) -> bool {
     let mut output_path = get_clipping_folder();
-    output_path.push(clip.path.file_name().unwrap());
+
+    // no need to prefix path here, as get_clips already prefixes it for the frontend and frontend returns full path
+    let clip_path = PathBuf::from(&clip.path);
+
+    output_path.push(&clip_path.file_name().unwrap());
 
     let action_count = clip.action_count
         [(start.floor() as usize)..=(std::cmp::min(end.floor() as usize, clip.action_count.len()))]
@@ -92,7 +112,7 @@ fn trim_clip(clip: Clip, start: f64, end: f64) -> bool {
         .cloned()
         .collect::<Vec<usize>>();
 
-    match ffmpeg::ffmpeg::trim_clip(&clip.path, &output_path, start, end) {
+    match ffmpeg::ffmpeg::trim_clip(&clip_path, &output_path, start, end) {
         Ok(_) => {
             storage::clips::store_new_trim(output_path, clip.game, action_count);
             true
@@ -103,7 +123,11 @@ fn trim_clip(clip: Clip, start: f64, end: f64) -> bool {
 
 #[tauri::command]
 fn delete_clip(clip: Clip) {
-    storage::clips::delete_clip(clip);
+    let mut unprefixed_clip = clip.clone();
+    unprefixed_clip.path = clean_path(&clip.path);
+    unprefixed_clip.thumbnail = clean_path(&clip.thumbnail);
+
+    storage::clips::delete_clip(unprefixed_clip);
 }
 
 #[tauri::command]
