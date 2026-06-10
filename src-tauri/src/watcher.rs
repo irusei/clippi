@@ -97,7 +97,7 @@ pub fn start_input_monitoring() {
                 }
             }
 
-            std::thread::sleep(Duration::from_millis(50));
+            std::thread::sleep(Duration::from_millis(10));
 
             let keys = device_state.get_keys();
             let mouse_buttons = device_state.get_mouse().button_pressed;
