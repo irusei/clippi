@@ -22,21 +22,11 @@ tested on cachyos w/ wayland
 ## setup
 
 ### development (windows)
+requires cmake and maybe visual studio 18 2026 (unsure) to compile obs sources, powershell, npm and obviously cargo
 
 ```bash
 npm install
 npm run tauri dev # (it will crash here)
-
-# only on first start:
-cd installer
-cargo build --release
-cp target/release/installer.exe ../src-tauri/target/debug/installer.exe
-cd ../src-tauri/target/debug
-./installer.exe # downloads obs & ffmpeg
-cd ../../..
-
-# subsequent attempts only need to run this
-npm run tauri dev # (it will no longer crash here)
 ```
 
 ### build

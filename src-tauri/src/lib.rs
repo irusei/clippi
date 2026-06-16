@@ -77,7 +77,11 @@ fn get_clips(handle: AppHandle) -> Vec<Clip> {
 
 #[tauri::command]
 fn open_clip_in_explorer(clip: Clip) {
-    let path = PathBuf::from(prefix_path(&clip.path));
+    // no need to prefix path here, as get_clips already prefixes it for the frontend and frontend returns full path
+    // however need to change / to \ ....
+    let path = PathBuf::from(&clip.path.replace("/", "\\"));
+
+    println!("{}", path.to_string_lossy().to_string());
     #[cfg(target_os = "windows")]
     {
         Command::new("explorer")
@@ -114,7 +118,12 @@ fn trim_clip(clip: Clip, start: f64, end: f64) -> bool {
 
     match ffmpeg::ffmpeg::trim_clip(&clip_path, &output_path, start, end) {
         Ok(_) => {
-            storage::clips::store_new_trim(output_path, clip.game, action_count);
+            storage::clips::store_new_trim(
+                output_path,
+                clip.game,
+                action_count,
+                clip.integration_result,
+            );
             true
         }
         Err(_) => false,
@@ -182,6 +191,7 @@ pub fn run() {
         watcher::init();
     });
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .setup(|app| {
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
@@ -222,7 +232,9 @@ pub fn run() {
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
-                window.hide().unwrap();
+
+                let _ = window.minimize();
+                let _ = window.hide();
             }
         })
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {

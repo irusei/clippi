@@ -10,7 +10,10 @@ use serde::Deserialize;
 use crate::{
     announce_current_game,
     detector::detector,
-    integrations::discord::rpc,
+    integrations::{
+        discord::rpc,
+        game::events::{start_integration, stop_integration},
+    },
     recorder::recorder::{record, RecordingSettings},
     sound,
     storage::{
@@ -67,7 +70,7 @@ pub fn add_bookmark(name: String) {
     if let Some(start_time) = get_recording_start_time() {
         CURRENT_BOOKMARKS.lock().unwrap().push(Bookmark {
             name,
-            timestamp: start_time.elapsed().unwrap_or(Duration::ZERO).as_millis(),
+            timestamp: start_time.elapsed().unwrap_or(Duration::ZERO).as_millis() as u64,
         })
     }
 }
@@ -207,6 +210,9 @@ pub fn handle_process(proc: Process) {
                 rpc::set_activity(&detected_game);
             }
 
+            // enable auto events
+            start_integration(&detected_game);
+
             // start input monitoring before recording begins
             start_input_monitoring();
 
@@ -223,6 +229,7 @@ pub fn handle_process(proc: Process) {
                     set_recording_start_time(None);
                     announce_current_game(None);
                     stop_input_monitoring();
+                    let integration_result = stop_integration();
                     rpc::clear_activity();
 
                     store_clip(
@@ -231,6 +238,7 @@ pub fn handle_process(proc: Process) {
                         detected_game_cloned,
                         bookmarks,
                         action_count,
+                        integration_result,
                     );
                 }),
             ) {
@@ -240,6 +248,7 @@ pub fn handle_process(proc: Process) {
                 set_recording_start_time(None);
                 announce_current_game(None);
                 stop_input_monitoring();
+                stop_integration();
                 rpc::clear_activity();
             }
         }

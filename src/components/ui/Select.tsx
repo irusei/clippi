@@ -1,85 +1,181 @@
 import clsx from "clsx";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, ReactNode } from "react";
 
-interface SelectProps {
-  className?: string;
-  value?: string;
-  onChange?: (newValue: string) => void;
-  options: [string, string][];
-  disabled?: boolean;
-}
+type SelectContentProps =
+    | {
+          options: [string, string][];
+          children?: never;
+      }
+    | {
+          options?: never;
+          children: [string, ReactNode][];
+      };
+
+type SelectProps = SelectContentProps & {
+    className?: string;
+    value?: string;
+    onChange?: (newValue: string) => void;
+    disabled?: boolean;
+    placeholderValue?: string;
+};
 
 export function Select({
-  className,
-  disabled,
-  value,
-  onChange,
-  options,
+    className,
+    disabled,
+    value,
+    onChange,
+    options,
+    children,
+    placeholderValue,
 }: SelectProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+    const [isOpen, setIsOpen] = useState(false);
+    const [search, setSearch] = useState("");
+    const containerRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative" ref={containerRef}>
-      <button
-        type="button"
-        className={clsx(
-          "w-full py-2.5 px-3 rounded-lg flex items-center justify-between text-mocha-text appearance-none cursor-pointer transition-colors bg-mocha-base border border-mocha-base",
-          disabled
-            ? "opacity-50 cursor-not-allowed pointer-events-none"
-            : "hover:border-mocha-mauve hover:border focus:outline-mocha-mauve focus:outline-none focus:ring-1 focus:ring-mocha-mauve/50",
-          className,
-        )}
-        disabled={disabled ?? false}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-      >
-        <span className="flex-1 text-left truncate">
-          {value || "Select an option"}
-        </span>
-        <div className="ml-3 shrink-0">
-          {isOpen ? (
-            <ChevronUp className="w-4 h-4 text-mocha-text" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-mocha-text" />
-          )}
-        </div>
-      </button>
-      {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-mocha-base border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto scrollbar-hide z-10">
-          {options.map(([option, optionValue]) => (
-            <button
-              key={option}
-              type="button"
-              className={clsx(
-                "w-full px-3 py-2 text-left transition-colors cursor-pointer",
-                value === optionValue
-                  ? "bg-mocha-mauve/10 text-mocha-mauve"
-                  : "text-mocha-text hover:bg-border hover:bg-mocha-mauve/20",
-              )}
-              onClick={() => {
-                onChange?.(optionValue);
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (
+                containerRef.current &&
+                !containerRef.current.contains(event.target as Node)
+            ) {
                 setIsOpen(false);
-              }}
+                setSearch("");
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(() => inputRef.current?.focus(), 0);
+        }
+    }, [isOpen]);
+
+    const filteredOptions = useMemo(() => {
+        if (!options) return [];
+        if (!search.trim()) return options;
+
+        const q = search.toLowerCase();
+
+        return options.filter(
+            ([label, val]) =>
+                label.toLowerCase().includes(q) ||
+                val.toLowerCase().includes(q),
+        );
+    }, [options, search]);
+
+    const filteredChildren = useMemo(() => {
+        if (!children) return [];
+        if (!search.trim()) return children;
+
+        const q = search.toLowerCase();
+
+        return children.filter(([key, child]) => {
+            const text = typeof child === "string" ? child : key;
+
+            return (
+                key.toLowerCase().includes(q) || text.toLowerCase().includes(q)
+            );
+        });
+    }, [children, search]);
+
+    return (
+        <div
+            className={clsx("relative transition-all", className)}
+            ref={containerRef}
+        >
+            <div
+                className={clsx(
+                    "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-mocha-base cursor-pointer transition-all",
+                    disabled
+                        ? "opacity-50 pointer-events-none outline-none"
+                        : "hover:border-mocha-mauve focus-within:ring-1 focus-within:ring-mocha-mauve/50",
+                )}
+                onClick={() => {
+                    if (!disabled) setIsOpen(true);
+                    inputRef.current?.focus();
+                }}
             >
-              {option}
-            </button>
-          ))}
+                <input
+                    ref={inputRef}
+                    value={isOpen ? search : value || ""}
+                    placeholder={placeholderValue || "Select an option"}
+                    readOnly={!isOpen}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full bg-transparent text-mocha-text focus:outline-none"
+                />
+
+                <div className="ml-2 shrink-0 text-mocha-overlay1">
+                    {isOpen ? (
+                        <ChevronUp className="w-4 h-4" />
+                    ) : (
+                        <ChevronDown className="w-4 h-4" />
+                    )}
+                </div>
+            </div>
+
+            {isOpen && (
+                <div className="absolute left-0 right-0 top-full bg-mocha-base border border-mocha-mauve/10 overflow-hidden z-20">
+                    <div className="max-h-60 overflow-y-auto scrollbar-hide">
+                        {children ? (
+                            filteredChildren.length > 0 ? (
+                                filteredChildren.map(([key, child]) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        className={clsx(
+                                            "w-full px-3 py-2 text-left transition-colors",
+                                            value === key
+                                                ? "bg-mocha-mauve/10 text-mocha-mauve"
+                                                : "text-mocha-text hover:bg-mocha-mauve/20",
+                                        )}
+                                        onClick={() => {
+                                            onChange?.(key);
+                                            setIsOpen(false);
+                                            setSearch("");
+                                        }}
+                                    >
+                                        {child}
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="px-3 py-4 text-center text-sm text-mocha-subtext0">
+                                    No results found
+                                </div>
+                            )
+                        ) : filteredOptions.length > 0 ? (
+                            filteredOptions.map(([label, val]) => (
+                                <button
+                                    key={val}
+                                    type="button"
+                                    className={clsx(
+                                        "w-full px-3 py-2 text-left transition-colors",
+                                        value === val
+                                            ? "bg-mocha-mauve/10 text-mocha-mauve"
+                                            : "text-mocha-text hover:bg-mocha-mauve/20",
+                                    )}
+                                    onClick={() => {
+                                        onChange?.(val);
+                                        setIsOpen(false);
+                                        setSearch("");
+                                    }}
+                                >
+                                    {label}
+                                </button>
+                            ))
+                        ) : (
+                            <div className="px-3 py-4 text-center text-sm text-mocha-subtext0">
+                                No results found
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }

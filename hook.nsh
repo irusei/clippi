@@ -1,18 +1,18 @@
 !macro NSIS_HOOK_POSTINSTALL
+
   Var /GLOBAL SecondaryInstaller
   StrCpy $SecondaryInstaller "installer.exe"
 
+  Sleep 1000
+
   ${If} ${FileExists} "$INSTDIR\$SecondaryInstaller"
-    DetailPrint "Executing $SecondaryInstaller..."
-    
-    ExecWait '"$INSTDIR\$SecondaryInstaller" /passive' $0
+    DetailPrint "Executing $SecondaryInstaller as admin..."
 
-    ${If} $0 == 0
-      DetailPrint "Installation successful."
-    ${Else}
-      DetailPrint "Installation failed with code: $0"
-    ${EndIf}
+    SetOutPath "$INSTDIR"
 
-    Delete "$INSTDIR\$SecondaryInstaller"
+    ExecShell "runas" "$INSTDIR\$SecondaryInstaller"
+  ${Else}
+    DetailPrint "Secondary installer not found."
   ${EndIf}
+
 !macroend

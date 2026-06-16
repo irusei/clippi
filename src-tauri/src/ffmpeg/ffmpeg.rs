@@ -1,6 +1,6 @@
-use std::{path::PathBuf, process::Command};
+use std::path::PathBuf;
 
-use crate::ffmpeg::ffprobe;
+use crate::ffmpeg::{ffprobe, process};
 
 #[cfg(target_os = "windows")]
 const FFMPEG_NAME: &str = "./ffmpeg.exe";
@@ -14,8 +14,9 @@ pub fn extract_middle_frame(
     let duration = ffprobe::duration(input);
     let midpoint = duration / 2.0;
 
-    let status = Command::new(FFMPEG_NAME)
-        .args([
+    let status = process::make(
+        FFMPEG_NAME,
+        &[
             "-ss",
             &midpoint.to_string(),
             "-i",
@@ -28,8 +29,9 @@ pub fn extract_middle_frame(
             "1",
             &output.to_string_lossy().to_string(),
             "-y",
-        ])
-        .status()?;
+        ],
+    )
+    .status()?;
 
     if !status.success() {
         return Err("ffmpeg failed".into());
@@ -50,24 +52,22 @@ pub fn trim_clip(
         return Err("Invalid trim range".into());
     }
 
-    let status = Command::new(FFMPEG_NAME)
-        .args([
+    let status = process::make(
+        FFMPEG_NAME,
+        &[
             "-ss",
             &start.to_string(),
             "-i",
             &input.to_string_lossy(),
             "-t",
             &duration.to_string(),
-            "-c:v",
-            "libx264",
-            "-c:a",
-            "aac",
-            "-preset",
-            "fast",
+            "-c",
+            "copy",
             "-y",
             &output.to_string_lossy(),
-        ])
-        .status()?;
+        ],
+    )
+    .status()?;
 
     if !status.success() {
         return Err("ffmpeg failed".into());
