@@ -28,7 +28,7 @@ requires cmake, powershell, npm and cargo. compiling the obs sources [probably r
 
 ```bash
 npm install
-npm run tauri dev # (it will crash here)
+npm run tauri dev
 ```
 
 ### build
