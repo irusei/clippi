@@ -11,8 +11,18 @@ fn set_cwd_to_exe_dir() -> std::io::Result<()> {
     Ok(())
 }
 
+#[cfg(target_os = "linux")]
+fn has_nvidia_gpu() -> bool {
+    std::fs::metadata("/sys/module/nvidia").is_ok()
+}
+
 #[tokio::main]
 async fn main() {
+    #[cfg(target_os = "linux")]
+    if has_nvidia_gpu() {
+        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+    }
+
     set_cwd_to_exe_dir().expect("failed to set cwd");
     clippi_lib::run()
 }
