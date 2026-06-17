@@ -4,6 +4,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import Clip from "../components/Clip";
 import ClipViewer from "../components/ClipViewer";
+import { FilterMenu } from "../components/FilterMenu";
+import { filterClips } from "../utils/filterClips";
+import { FilterOptions } from "../types";
 import { parseSize } from "../utils";
 import { platform } from "@tauri-apps/plugin-os";
 import { Select } from "../components/ui/Select";
@@ -30,6 +33,9 @@ export default function ClipTab() {
         [],
     );
     const [selectedGameName, setSelectedGameName] = useState<string>("");
+    const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+        type: "",
+    });
 
     // runs on trim, sets clip to trim
     function setSelectedClipToLastClip() {
@@ -97,9 +103,34 @@ export default function ClipTab() {
                         </label>
                         <div className="flex flex-row gap-x-3 items-center w-full">
                             <Select
-                                className="w-1/3"
+                                className="w-1/4"
                                 value={selectedGameName}
                                 placeholderValue={"Filter games..."}
+                                selectedLabel={
+                                    selectedGameName
+                                        ? (() => {
+                                              const game = uniqueGames.find(
+                                                  ([g]) =>
+                                                      g.name ===
+                                                      selectedGameName,
+                                              );
+                                              return game ? (
+                                                  <>
+                                                      <img
+                                                          className="w-5 h-5"
+                                                          src={
+                                                              game[0].icon ?? ""
+                                                          }
+                                                          alt={game[0].name}
+                                                      />
+                                                      <p className="text-mocha-text truncate">
+                                                          {game[0].name}
+                                                      </p>
+                                                  </>
+                                              ) : null;
+                                          })()
+                                        : undefined
+                                }
                                 onChange={(val) =>
                                     setSelectedGameName(
                                         selectedGameName === val ? "" : val,
@@ -125,24 +156,26 @@ export default function ClipTab() {
                                     </div>,
                                 ])}
                             </Select>
+                            <FilterMenu
+                                gameName={selectedGameName}
+                                filterOptions={filterOptions}
+                                setFilterOptions={setFilterOptions}
+                                clips={clips}
+                            />
                         </div>
 
                         <div className={"flex flex-col gap-3"}>
-                            {clips.map((clip) => {
-                                if (
-                                    selectedGameName == "" ||
-                                    clip.game.name == selectedGameName
-                                )
-                                    return (
-                                        <Clip
-                                            key={clip.id}
-                                            clip={clip}
-                                            onClick={() =>
-                                                _setSelectedClip(clip)
-                                            }
-                                        />
-                                    );
-                            })}
+                            {filterClips(
+                                clips,
+                                selectedGameName,
+                                filterOptions,
+                            ).map((clip) => (
+                                <Clip
+                                    key={clip.id}
+                                    clip={clip}
+                                    onClick={() => _setSelectedClip(clip)}
+                                />
+                            ))}
                         </div>
                     </div>
                 </>

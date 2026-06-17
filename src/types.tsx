@@ -47,3 +47,15 @@ export interface Settings {
     discord_rpc_enabled: boolean;
     windows_autostart: boolean;
 }
+
+export type BaseFilter = {
+    type: string;
+};
+
+export type LeagueFilter = BaseFilter & {
+    type: "league";
+    championName?: string;
+    positionName?: string;
+};
+
+export type FilterOptions = BaseFilter | LeagueFilter;

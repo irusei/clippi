@@ -99,3 +99,16 @@ export function getGameResult(
 
     return lastEvent.Result;
 }
+
+const positionNameMap: Record<string, string> = {
+    TOP: "Top",
+    JUNGLE: "Jungle",
+    MIDDLE: "Mid",
+    BOTTOM: "ADC",
+    UTILITY: "Support",
+    NONE: "Any",
+};
+
+export function getPositionName(rawPosition: string): string {
+    return positionNameMap[rawPosition] ?? rawPosition;
+}

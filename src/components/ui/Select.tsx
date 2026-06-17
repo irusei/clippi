@@ -18,6 +18,7 @@ type SelectProps = SelectContentProps & {
     onChange?: (newValue: string) => void;
     disabled?: boolean;
     placeholderValue?: string;
+    selectedLabel?: ReactNode;
 };
 
 export function Select({
@@ -28,6 +29,7 @@ export function Select({
     options,
     children,
     placeholderValue,
+    selectedLabel,
 }: SelectProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
@@ -101,14 +103,26 @@ export function Select({
                     inputRef.current?.focus();
                 }}
             >
-                <input
-                    ref={inputRef}
-                    value={isOpen ? search : value || ""}
-                    placeholder={placeholderValue || "Select an option"}
-                    readOnly={!isOpen}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full bg-transparent text-mocha-text focus:outline-none"
-                />
+                {isOpen ? (
+                    <input
+                        ref={inputRef}
+                        value={search}
+                        placeholder={placeholderValue || "Select an option"}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full bg-transparent text-mocha-text focus:outline-none"
+                    />
+                ) : selectedLabel ? (
+                    <div className="flex items-center gap-2 text-mocha-text">
+                        {selectedLabel}
+                    </div>
+                ) : (
+                    <input
+                        value={value || ""}
+                        readOnly
+                        placeholder={placeholderValue || "Select an option"}
+                        className="w-full bg-transparent text-mocha-text focus:outline-none"
+                    />
+                )}
 
                 <div className="ml-2 shrink-0 text-mocha-overlay1">
                     {isOpen ? (
