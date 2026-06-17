@@ -1,5 +1,12 @@
 [
     {
+        "name": "Airport Security Sucks!",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/4285690/72f23c72015ce8b32be40609e281cb8b845e16db.jpg",
+        "executables": ["Airport Security Sucks!.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
         "name": "Balatro",
         "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/2379780/b6018068070ab0e23561694c11f7950dd6f4c752.jpg",
         "executables": ["Balatro.exe"],
@@ -101,6 +108,13 @@
         "name": "Marvel Rivals",
         "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/2767030/839b4712925b95702ca56e0c4d399adf54f4d617.jpg",
         "executables": ["Marvel-Win64-Shipping.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "MECCHA CHAMELEON",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/4704690/fbef288370f6ae51cb0a5066d7fb13d26147c94a.jpg",
+        "executables": ["PenguinHotel.exe"],
         "use_window_capture": false,
         "title_regex": []
     },
