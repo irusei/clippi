@@ -33,7 +33,7 @@ export default function ProcessPicker({
     }, []);
 
     useEffect(() => {
-        if (isOpen && processes.length === 0) {
+        if (isOpen) {
             setLoading(true);
             invoke<string[]>("list_processes").then((procs) => {
                 setProcesses([...new Set(procs)]);
