@@ -29,6 +29,13 @@ pub struct Settings {
     pub discord_rpc_enabled: bool,
     #[serde(default)]
     pub windows_autostart: bool,
+
+    #[serde(default = "default_bookmark_key")]
+    pub bookmark_key: String,
+}
+
+fn default_bookmark_key() -> String {
+    String::from("F8")
 }
 
 static SETTINGS: LazyLock<Mutex<Settings>> =
@@ -66,6 +73,7 @@ fn load_settings_from_file() -> Settings {
                 capture_mic: false,
                 discord_rpc_enabled: false,
                 windows_autostart: false,
+                bookmark_key: String::from("F8"),
             }
         }
         true => {

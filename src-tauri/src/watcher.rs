@@ -6,6 +6,14 @@ use std::{
 
 use device_query::{device_state, DeviceQuery, Keycode};
 use serde::Deserialize;
+use std::str::FromStr;
+
+fn parse_bookmark_key(key_str: &str) -> Vec<Keycode> {
+    key_str
+        .split('+')
+        .filter_map(|k| Keycode::from_str(k).ok())
+        .collect()
+}
 
 use crate::{
     announce_current_game,
@@ -85,13 +93,22 @@ pub fn start_input_monitoring() {
 
     thread::spawn(|| {
         let device_state = device_state::DeviceState::new();
-        let mut f8_debounce = false;
+        let mut bookmark_debounce = false;
 
         let mut previous_keys: std::collections::HashSet<Keycode> =
             std::collections::HashSet::new();
         let mut previous_mb: Vec<bool> = Vec::new();
         let mut last_action_push = SystemTime::now();
         let mut actions_this_second = 0;
+
+        let settings = get_settings();
+        let mut bookmark_keys: Vec<Keycode> = parse_bookmark_key(&settings.bookmark_key);
+
+        // avoid bookmark keys being empty
+        // if bookmark_keys is empty, there will be an automatic bookmark every 10ms due to .all() returning true
+        if bookmark_keys.len() == 0 {
+            bookmark_keys = vec![Keycode::F8];
+        }
 
         loop {
             {
@@ -105,14 +122,14 @@ pub fn start_input_monitoring() {
             let keys = device_state.get_keys();
             let mouse_buttons = device_state.get_mouse().button_pressed;
 
-            let f8_down = keys.clone().contains(&Keycode::F8);
+            let bookmark_keys_down = bookmark_keys.iter().all(|k| keys.contains(k));
 
-            if f8_down && !f8_debounce {
-                f8_debounce = true;
+            if bookmark_keys_down && !bookmark_debounce {
+                bookmark_debounce = true;
                 add_bookmark(String::from("BOOKMARK"));
                 let _ = sound::play_sound(std::path::PathBuf::from("./assets/bookmark.wav"));
-            } else if !f8_down && f8_debounce {
-                f8_debounce = false;
+            } else if !bookmark_keys_down && bookmark_debounce {
+                bookmark_debounce = false;
             }
 
             let key_difference = keys

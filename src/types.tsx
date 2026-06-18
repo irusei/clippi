@@ -46,6 +46,7 @@ export interface Settings {
     capture_mic: boolean;
     discord_rpc_enabled: boolean;
     windows_autostart: boolean;
+    bookmark_key: string;
 }
 
 export type BaseFilter = {

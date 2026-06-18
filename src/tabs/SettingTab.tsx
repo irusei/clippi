@@ -5,6 +5,7 @@ import { Switch } from "../components/ui/Switch";
 import { SettingsContainer } from "../components/ui/SettingsContainer";
 import Input from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
+import { KeybindingInput } from "../components/ui/KeybindingInput";
 import { platform } from "@tauri-apps/plugin-os";
 import { Folder } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -215,6 +216,25 @@ export default function SettingTab() {
                                         "capture_desktop_audio",
                                         value,
                                     )
+                                }
+                            />
+                        </SettingsContainer>
+                    </div>
+                </section>
+
+                <section className="flex flex-col gap-4">
+                    <h3 className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">
+                        Hotkeys
+                    </h3>
+                    <div className="flex flex-col gap-3 px-1">
+                        <SettingsContainer
+                            title="Bookmark Key"
+                            description="Key to press to create a bookmark during recording"
+                        >
+                            <KeybindingInput
+                                value={settings.bookmark_key}
+                                onChange={(key) =>
+                                    updateSetting("bookmark_key", key)
                                 }
                             />
                         </SettingsContainer>
