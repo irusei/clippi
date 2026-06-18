@@ -507,7 +507,7 @@ export default function ClipViewer({
                                 });
                             }}
                         >
-                            Export Selection
+                            Trim
                         </button>
                     </div>
                 </div>
