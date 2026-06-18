@@ -1,5 +1,5 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { Result, VodClip } from "../types";
+import { VodClip } from "../types";
 import {
     Play,
     Pause,
@@ -12,6 +12,7 @@ import {
     Scissors,
     VolumeOff,
     Pencil,
+    PanelRightOpen,
 } from "lucide-react";
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { formatTime, smooth } from "../utils";
@@ -27,7 +28,8 @@ import {
 import Input from "./ui/Input";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { LeagueGameEvent } from "../integration/league/LeagueTypes";
+import RightPanel from "./RightPanel";
+import { getMarkerData } from "./MarkerData";
 
 interface ClipViewerProps {
     clip: VodClip;
@@ -35,61 +37,6 @@ interface ClipViewerProps {
     setSelectedClipToLastClip: () => void;
 }
 
-function getIntegrationMarkers(integration: Result | null, duration: number) {
-    if (integration == null) return [];
-
-    let markers: React.ReactNode[] = [];
-
-    function newMarker(event: LeagueGameEvent, name: string, color: string) {
-        markers.push(
-            <TimelineMarker
-                label={name}
-                time={event.EventTime + integration!.offset / 1000}
-                duration={duration}
-                colorClass={color}
-                hidden={true}
-            />,
-        );
-    }
-    let username = integration.data.current_player_data.riotId.split("#")[0]; // FIXME: i don't know what the behavior for this is if multiple people in a match have the same name
-    if (integration.type === "LeagueResult") {
-        for (const event of integration.data.game_events.Events) {
-            switch (event.EventName) {
-                case "TurretKilled":
-                    if (
-                        event.Assisters.includes(username) ||
-                        event.KillerName === username
-                    ) {
-                        newMarker(event, "TURRET DESTROYED", "bg-mocha-blue");
-                    }
-                    break;
-                case "ChampionKill":
-                    if (
-                        event.Assisters.includes(username) ||
-                        event.KillerName === username
-                    ) {
-                        newMarker(event, "KILL", "bg-mocha-mauve");
-                    } else if (event.VictimName === username) {
-                        newMarker(event, "DEATH", "bg-mocha-red");
-                    }
-                    break;
-                case "BaronKill":
-                case "DragonKill":
-                case "HeraldKill":
-                case "HordeKill":
-                    if (
-                        event.Assisters.includes(username) ||
-                        event.KillerName === username
-                    ) {
-                        newMarker(event, "OBJECTIVE", "bg-mocha-lavender");
-                    }
-                    break;
-            }
-        }
-    }
-
-    return markers;
-}
 export default function ClipViewer({
     clip,
     onExitClip,
@@ -107,6 +54,7 @@ export default function ClipViewer({
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [titleInput, setTitleInput] = useState(clip.title);
     const [mouseDown, setMouseDown] = useState(false);
+    const [showRightPanel, setShowRightPanel] = useState(false);
 
     const handleMouseMove = useCallback(
         (e: MouseEvent) => {
@@ -212,11 +160,6 @@ export default function ClipViewer({
         }));
     }, [clip]);
 
-    const integrationMarkers = useMemo(
-        () => getIntegrationMarkers(clip.integration_result, clip.duration),
-        [clip],
-    );
-
     const adjustTimeline = (e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget!.getBoundingClientRect();
         if (playerRef.current) {
@@ -228,7 +171,7 @@ export default function ClipViewer({
     };
 
     return (
-        <div className="relative flex flex-col w-full h-screen overflow-hidden text-mocha-text bg-mocha-base font-sans">
+        <div className="relative flex flex-col w-full h-screen text-mocha-text bg-mocha-base font-sans">
             <div className="absolute z-20 flex items-center justify-between w-full p-4 pointer-events-none">
                 <div className="flex items-center gap-4 pointer-events-auto opacity-100 px-4 py-2 max-h-10">
                     <ArrowLeft
@@ -273,15 +216,37 @@ export default function ClipViewer({
                         </div>
                     )}
                 </div>
-                <div
-                    className="flex items-center justify-center w-10 h-10 opacity-100 hover:text-mocha-lavender cursor-pointer pointer-events-auto"
-                    onClick={() => invoke("open_clip_in_explorer", { clip })}
-                >
-                    <FolderOpen className="w-5 h-5" />
+                <div className="flex items-center gap-2 pointer-events-auto">
+                    <div
+                        className="flex items-center justify-center w-10 h-10 opacity-100 hover:text-mocha-lavender cursor-pointer"
+                        onClick={() =>
+                            invoke("open_clip_in_explorer", { clip })
+                        }
+                    >
+                        <FolderOpen className="w-5 h-5" />
+                    </div>
+                    <div
+                        className="flex items-center justify-center w-10 h-10 opacity-100 hover:text-mocha-lavender cursor-pointer"
+                        onClick={() => setShowRightPanel(!showRightPanel)}
+                    >
+                        <PanelRightOpen className="w-5 h-5" />
+                    </div>
                 </div>
             </div>
 
             <div className="relative flex items-center justify-center flex-1 bg-mocha-crust overflow-hidden">
+                {showRightPanel && (
+                    <RightPanel
+                        clip={clip}
+                        onSeek={(timestamp) => {
+                            playerRef.current &&
+                                (playerRef.current.currentTime = timestamp);
+                            setCurrentTime(timestamp);
+                        }}
+                        onClose={() => setShowRightPanel(false)}
+                    />
+                )}
+
                 <video
                     ref={playerRef}
                     src={convertFileSrc(clip.path)}
@@ -371,7 +336,7 @@ export default function ClipViewer({
                 </div>
             </div>
 
-            <div className="bg-mocha-mantle border-t border-mocha-surface0 select-none p-4 pb-6">
+            <div className="bg-mocha-mantle border-t border-mocha-surface0 select-none p-4 pb-6 space-y-3 overflow-y-auto max-h-[50vh]">
                 <div
                     ref={timelineRef}
                     className="relative h-28 w-full bg-mocha-crust/50 cursor-pointer rounded-lg border border-mocha-surface0"
@@ -428,17 +393,18 @@ export default function ClipViewer({
                         hidden={false}
                     />
 
-                    {integrationMarkers}
-
-                    {clip.bookmarks.map((bookmark) => (
-                        <TimelineMarker
-                            label={bookmark.name}
-                            time={bookmark.timestamp / 1000}
-                            duration={clip.duration}
-                            colorClass="bg-mocha-green"
-                            hidden={true}
-                        />
-                    ))}
+                    {getMarkerData(clip.integration_result, clip.bookmarks).map(
+                        (marker, i) => (
+                            <TimelineMarker
+                                key={i}
+                                label={marker.label}
+                                time={marker.time}
+                                duration={clip.duration}
+                                colorClass={marker.colorClass}
+                                hidden={true}
+                            />
+                        ),
+                    )}
 
                     <ResponsiveContainer width="100%" height={"100%"}>
                         <LineChart

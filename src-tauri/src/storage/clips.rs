@@ -183,12 +183,7 @@ pub fn store_clip(
     save_to_file();
 }
 
-pub fn store_new_trim(
-    clip_path: PathBuf,
-    game_data: DetectedGameData,
-    action_count: Vec<usize>,
-    old_integration_result: Option<Box<dyn GameIntegrationResult>>,
-) {
+pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData, action_count: Vec<usize>) {
     // prepare move
     let clip_filename = clip_path.file_name().expect("Failed to get filename?");
     if let Some((_clip_name_no_extension, extension)) =
@@ -240,10 +235,10 @@ pub fn store_new_trim(
                 game: game_data,
                 size: file_size,
                 thumbnail: clean_path(&thumbnail.to_string_lossy().to_string()),
-                bookmarks: Vec::new(), // reset bookmarks, maybe it's better if we don't?,
+                bookmarks: Vec::new(), // TODO: make this stay
                 action_count: action_count,
                 date: chrono::Local::now().format("%Y-%m-%d %H:%M").to_string(),
-                integration_result: old_integration_result,
+                integration_result: None, // TODO: make this stay
             });
         }
         save_to_file();

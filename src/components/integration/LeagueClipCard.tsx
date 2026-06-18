@@ -76,20 +76,31 @@ function LeagueClipCardPlayer({
                 <img
                     className="w-10 h-10 rounded-md bg-mocha-surface0 border border-mocha-crust object-cover"
                     src={championImage}
+                    alt=""
+                    title={player.championName}
                 />
 
-                <span className="absolute -bottom-1 -right-1 flex items-center justify-center min-w-4 h-4 px-1 rounded text-[10px] font-bold text-white bg-mocha-crust border border-mocha-crust">
+                <span
+                    className="absolute -bottom-1 -right-1 flex items-center justify-center min-w-4 h-4 px-1 rounded text-[10px] font-bold text-white bg-mocha-crust border border-mocha-crust"
+                    title={`Lv.${player.level}`}
+                >
                     {player.level}
                 </span>
             </div>
 
             <div className="flex flex-col gap-y-0.5">
-                {spellImages.map((spellImage) => (
-                    <img
-                        className="w-5 h-5 rounded bg-mocha-surface0 border border-mocha-crust object-cover"
-                        src={spellImage}
-                    />
-                ))}
+                <img
+                    className="w-5 h-5 rounded bg-mocha-surface0 border border-mocha-crust object-cover"
+                    src={spellImages[0]}
+                    alt=""
+                    title={player.summonerSpells.summonerSpellOne.displayName}
+                />
+                <img
+                    className="w-5 h-5 rounded bg-mocha-surface0 border border-mocha-crust object-cover"
+                    src={spellImages[1]}
+                    alt=""
+                    title={player.summonerSpells.summonerSpellTwo.displayName}
+                />
             </div>
 
             <div className="flex flex-col gap-y-0.5">
@@ -98,12 +109,16 @@ function LeagueClipCardPlayer({
                     src={getImageFromRuneName(
                         player.runes.primaryRuneTree.displayName,
                     )}
+                    alt=""
+                    title={player.runes.primaryRuneTree.displayName}
                 />
                 <img
                     className="w-5 h-5 rounded bg-mocha-surface0 border border-mocha-crust object-cover"
                     src={getImageFromRuneName(
                         player.runes.secondaryRuneTree.displayName,
                     )}
+                    alt=""
+                    title={player.runes.secondaryRuneTree.displayName}
                 />
             </div>
 
@@ -134,12 +149,15 @@ function LeagueClipCardPlayer({
                 )}
             </div>
 
-            {itemCols.map((col) => (
+            {itemCols.map((col, i) => (
                 <div className="flex flex-col gap-y-0.5">
-                    {col.map((image) => (
+                    {col.map((image, j) => (
                         <img
+                            key={i * 2 + j}
                             className="w-5 h-5 rounded bg-mocha-surface0 border border-mocha-crust object-cover"
                             src={image}
+                            alt=""
+                            title={player.items[i * 2 + j]?.displayName ?? ""}
                         />
                     ))}
                 </div>
@@ -152,7 +170,7 @@ interface LeagueClipCardProps {
     integrationResult: LeagueResult;
 }
 
-export default function LeaugeClipCard({
+export default function LeagueClipCard({
     integrationResult,
 }: LeagueClipCardProps) {
     let player = getSelf(integrationResult);

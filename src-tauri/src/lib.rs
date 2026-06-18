@@ -77,13 +77,9 @@ fn get_clips(handle: AppHandle) -> Vec<Clip> {
 
 #[tauri::command]
 fn open_clip_in_explorer(clip: Clip) {
-    // no need to prefix path here, as get_clips already prefixes it for the frontend and frontend returns full path
-    // however need to change / to \ ....
-    let path = PathBuf::from(&clip.path.replace("/", "\\"));
-
-    println!("{}", path.to_string_lossy().to_string());
     #[cfg(target_os = "windows")]
     {
+        let path = PathBuf::from(&clip.path.replace("/", "\\"));
         Command::new("explorer")
             .args(["/select,", path.to_str().unwrap()])
             .spawn()
@@ -92,6 +88,7 @@ fn open_clip_in_explorer(clip: Clip) {
     }
     #[cfg(target_os = "linux")]
     {
+        let path = PathBuf::from(&clip.path);
         let folder = path.parent().unwrap();
         Command::new("xdg-open")
             .arg(folder)
@@ -118,12 +115,7 @@ fn trim_clip(clip: Clip, start: f64, end: f64) -> bool {
 
     match ffmpeg::ffmpeg::trim_clip(&clip_path, &output_path, start, end) {
         Ok(_) => {
-            storage::clips::store_new_trim(
-                output_path,
-                clip.game,
-                action_count,
-                clip.integration_result,
-            );
+            storage::clips::store_new_trim(output_path, clip.game, action_count);
             true
         }
         Err(_) => false,

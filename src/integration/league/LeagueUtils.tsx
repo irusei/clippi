@@ -69,13 +69,24 @@ export async function getImageFromSpellName(
     spellName: string,
 ): Promise<string | null> {
     let img;
-    if (spellName === "Primal Smite" || spellName === "Unleashed Smite") {
-        img = "summoner_smite.png";
-    } else {
-        let spell = await getSpellData(spellName);
-        if (!spell) return null;
-        const split = spell.iconPath.split("/");
-        img = split[split.length - 1].toLowerCase();
+    switch (spellName) {
+        case "Primal Smite":
+        case "Unleashed Smite":
+            img = "summoner_smite.png";
+            break;
+        case "Primal Teleport":
+        case "Unleashed Teleport":
+            img = "summoner_teleport_new.png";
+            break;
+        case "Hexflash":
+            img = "summoner_flash.png";
+            break;
+        default:
+            let spell = await getSpellData(spellName);
+            if (!spell) return null;
+            const split = spell.iconPath.split("/");
+            img = split[split.length - 1].toLowerCase();
+            break;
     }
 
     return `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/data/spells/icons2d/${img}`;
