@@ -20,6 +20,18 @@ fn main() {
     fs::copy(&target_exe, &dest_exe)
         .unwrap_or_else(|e| panic!("failed to copy installer.exe: {}", e));
 
+    // fix app requiring dependencies on npm run tauri dev
+    let second_dest_exe = Path::new("target/debug/installer.exe");
+
+    fs::copy(&target_exe, &second_dest_exe)
+        .unwrap_or_else(|e| panic!("failed to copy installer.exe: {}", e));
+
+    Command::new(second_dest_exe)
+        .spawn()
+        .unwrap()
+        .wait()
+        .unwrap();
+
     tauri_build::build()
 }
 

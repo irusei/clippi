@@ -84,7 +84,7 @@ fn save_settings_to_file() {
     path.push("settings.json");
 
     let settings = get_settings();
-    let json = serde_json::to_string_pretty(&settings).expect("Failed to serialize json");
+    let json = serde_json::to_string(&settings).expect("Failed to serialize json");
 
     let mut settings_file = OpenOptions::new()
         .create(true)

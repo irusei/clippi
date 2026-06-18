@@ -1,257 +1,212 @@
 [
-  {
-    "name": "Balatro",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/2379780/b6018068070ab0e23561694c11f7950dd6f4c752.jpg",
-    "executables": [
-      "Balatro.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Call of Duty: Black Ops III",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/311210/bd3e3a9516b480164df25d16e49ae4ce4a063cb4.jpg",
-    "executables": [
-      "BlackOps3.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Call of Duty®: Modern Warfare®",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/2000950/dec4f33dfa8c3a47cfadb3a8ef0629740caa536d.jpg",
-    "executables": [
-      "ModernWarfare.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Counter-Strike 2",
-    "icon": "https://cdn2.steamgriddb.com/icon/01063bcf7624297fbb408495bcb62904/8/512x512.png",
-    "executables": [
-      "cs2.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Cult of the Lamb",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/1313140/337223c1a97705aee1714ad9534c7d6cfabd92b0.jpg",
-    "executables": [
-      "Cult Of The Lamb.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Deadlock",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/1422450/f6da1420a173324d49bcd470fa3eee781ad0fa5e.jpg",
-    "executables": [
-      "deadlock.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Deep Rock Galactic",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/548430/e033e23c29a192a17c16a7645a2b423ac64ff447.jpg",
-    "executables": [
-      "FSD.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Far Far West",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/3124540/a0a5e461c215c2a8916f42111ce41fa887cbec71.jpg",
-    "executables": [
-      "FarFarWest-Win64-Shipping.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Gamble With Your Friends",
-    "icon": "https://cdn2.steamgriddb.com/thumb/1d7115a89559b0e79b16ae662c7cff21.jpg",
-    "executables": [
-      "Gamble With Your Friends.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Geometry Dash",
-    "icon": "https://cdn2.steamgriddb.com/icon/750ed96f0d56d3346cda66d24bc0cbd5/32/256x256.png",
-    "executables": [
-      "GeometryDash.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Grand Theft Auto V Enhanced",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/3240220/8355a7bbdb704f727bfba80ec56bc7228991338e.jpg",
-    "executables": [
-      "GTA5_Enhanced.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Hades",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/1145360/8a3fca36a00883e8066263ad35dd15d77a1f9abc.jpg",
-    "executables": [
-      "Hades.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "KovaaK's",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/824270/ed2df8e3157c3fe9b62d0b72bdcd20d4e674be32.jpg",
-    "executables": [
-      "FPSAimTrainer-Win64-Shipping.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "League of Legends",
-    "icon": "https://cdn2.steamgriddb.com/icon/f8e8b1feff822753a39b21de69259fd6/32/256x256.png",
-    "executables": [
-      "League of Legends.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Marvel Rivals",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/2767030/839b4712925b95702ca56e0c4d399adf54f4d617.jpg",
-    "executables": [
-      "Marvel-Win64-Shipping.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Megabonk",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/3405340/8e0ff36cdb1076d69347a2796c7ef5ee18b2fee8.jpg",
-    "executables": [
-      "Megabonk.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Minecraft",
-    "icon": "https://cdn2.steamgriddb.com/icon/0678c572b0d5597d2d4a6b5bd135754c/32/1024x1024.png",
-    "executables": [
-      "java.exe",
-      "javaw.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": [
-      "^Minecraft"
-    ]
-  },
-  {
-    "name": "Nine Sols",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/1809540/9ba25f8e1b636ee56cc37196eb6fbcc13defac8e.jpg",
-    "executables": [
-      "NineSols.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Overwatch",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/2357570/da42bd294c941d5947b1bc2c2b2efa1313d36a91.jpg",
-    "executables": [
-      "Overwatch.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Pratfall",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/4244510/ba79876f97303e3497becb80a4efc613b8853776.jpg",
-    "executables": [
-      "Pratfall.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "ROBLOX",
-    "icon": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxYVDrhjJrGwHDVxoorqZpr759y3NqPe4EOA&s",
-    "executables": [
-      "RobloxPlayerBeta.exe"
-    ],
-    "use_window_capture": true,
-    "title_regex": []
-  },
-  {
-    "name": "Slime Rancher 2",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/1657630/8028810e9ad73e00c2385a986382c57a6b0e034e.jpg",
-    "executables": [
-      "SlimeRancher2.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Stardew Valley",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/413150/35d1377200084a4034238c05b0c8930451e2fb40.jpg",
-    "executables": [
-      "Stardew Valley.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Terraria",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/105600/858961e95fbf869f136e1770d586e0caefd4cfac.jpg",
-    "executables": [
-      "Terraria.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "The Binding of Isaac: Rebirth",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/250900/16d46c8630499bfc54d20745ac90786a302cd643.jpg",
-    "executables": [
-      "isaac-ng.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "Tom Clancy's Rainbow Six Siege",
-    "icon": "https://cdn2.steamgriddb.com/icon/bcb4bf9c71b2ceaca2cc07f5a07cd397.png",
-    "executables": [
-      "RainbowSix.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "TowerFall Ascension",
-    "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/251470/c7ad90c5f12c86496fdf7215127cf50e6a6860be.jpg",
-    "executables": [
-      "TowerFall.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  },
-  {
-    "name": "VALORANT",
-    "icon": "https://cdn2.steamgriddb.com/icon_thumb/9e82757e9a1c12cb710ad680db11f6f1.png",
-    "executables": [
-      "VALORANT-Win64-Shipping.exe"
-    ],
-    "use_window_capture": false,
-    "title_regex": []
-  }
+    {
+        "name": "Airport Security Sucks!",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/4285690/72f23c72015ce8b32be40609e281cb8b845e16db.jpg",
+        "executables": ["Airport Security Sucks!.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Balatro",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/2379780/b6018068070ab0e23561694c11f7950dd6f4c752.jpg",
+        "executables": ["Balatro.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Call of Duty: Black Ops III",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/311210/bd3e3a9516b480164df25d16e49ae4ce4a063cb4.jpg",
+        "executables": ["BlackOps3.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Call of Duty®: Modern Warfare®",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/2000950/dec4f33dfa8c3a47cfadb3a8ef0629740caa536d.jpg",
+        "executables": ["ModernWarfare.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Counter-Strike 2",
+        "icon": "https://cdn2.steamgriddb.com/icon/01063bcf7624297fbb408495bcb62904/8/512x512.png",
+        "executables": ["cs2.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Cult of the Lamb",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/1313140/337223c1a97705aee1714ad9534c7d6cfabd92b0.jpg",
+        "executables": ["Cult Of The Lamb.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Deadlock",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/1422450/f6da1420a173324d49bcd470fa3eee781ad0fa5e.jpg",
+        "executables": ["deadlock.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Deep Rock Galactic",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/548430/e033e23c29a192a17c16a7645a2b423ac64ff447.jpg",
+        "executables": ["FSD.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Far Far West",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/3124540/a0a5e461c215c2a8916f42111ce41fa887cbec71.jpg",
+        "executables": ["FarFarWest-Win64-Shipping.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Gamble With Your Friends",
+        "icon": "https://cdn2.steamgriddb.com/thumb/1d7115a89559b0e79b16ae662c7cff21.jpg",
+        "executables": ["Gamble With Your Friends.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Geometry Dash",
+        "icon": "https://cdn2.steamgriddb.com/icon/750ed96f0d56d3346cda66d24bc0cbd5/32/256x256.png",
+        "executables": ["GeometryDash.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Grand Theft Auto V Enhanced",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/3240220/8355a7bbdb704f727bfba80ec56bc7228991338e.jpg",
+        "executables": ["GTA5_Enhanced.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Hades",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/1145360/8a3fca36a00883e8066263ad35dd15d77a1f9abc.jpg",
+        "executables": ["Hades.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "KovaaK's",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/824270/ed2df8e3157c3fe9b62d0b72bdcd20d4e674be32.jpg",
+        "executables": ["FPSAimTrainer-Win64-Shipping.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "League of Legends",
+        "icon": "https://cdn2.steamgriddb.com/icon/f8e8b1feff822753a39b21de69259fd6/32/256x256.png",
+        "executables": ["League of Legends.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Marvel Rivals",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/2767030/839b4712925b95702ca56e0c4d399adf54f4d617.jpg",
+        "executables": ["Marvel-Win64-Shipping.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "MECCHA CHAMELEON",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/4704690/fbef288370f6ae51cb0a5066d7fb13d26147c94a.jpg",
+        "executables": ["PenguinHotel.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Megabonk",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/3405340/8e0ff36cdb1076d69347a2796c7ef5ee18b2fee8.jpg",
+        "executables": ["Megabonk.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Minecraft",
+        "icon": "https://cdn2.steamgriddb.com/icon/0678c572b0d5597d2d4a6b5bd135754c/32/1024x1024.png",
+        "executables": ["java.exe", "javaw.exe"],
+        "use_window_capture": false,
+        "title_regex": ["^Minecraft"]
+    },
+    {
+        "name": "Nine Sols",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/1809540/9ba25f8e1b636ee56cc37196eb6fbcc13defac8e.jpg",
+        "executables": ["NineSols.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Overwatch",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/2357570/da42bd294c941d5947b1bc2c2b2efa1313d36a91.jpg",
+        "executables": ["Overwatch.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Pratfall",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/4244510/ba79876f97303e3497becb80a4efc613b8853776.jpg",
+        "executables": ["Pratfall.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "ROBLOX",
+        "icon": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxYVDrhjJrGwHDVxoorqZpr759y3NqPe4EOA&s",
+        "executables": ["RobloxPlayerBeta.exe"],
+        "use_window_capture": true,
+        "title_regex": []
+    },
+    {
+        "name": "Slime Rancher 2",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/1657630/8028810e9ad73e00c2385a986382c57a6b0e034e.jpg",
+        "executables": ["SlimeRancher2.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Stardew Valley",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/413150/35d1377200084a4034238c05b0c8930451e2fb40.jpg",
+        "executables": ["Stardew Valley.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Terraria",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/105600/858961e95fbf869f136e1770d586e0caefd4cfac.jpg",
+        "executables": ["Terraria.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "The Binding of Isaac: Rebirth",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/250900/16d46c8630499bfc54d20745ac90786a302cd643.jpg",
+        "executables": ["isaac-ng.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Tom Clancy's Rainbow Six Siege",
+        "icon": "https://cdn2.steamgriddb.com/icon/bcb4bf9c71b2ceaca2cc07f5a07cd397.png",
+        "executables": ["RainbowSix.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "TowerFall Ascension",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/251470/c7ad90c5f12c86496fdf7215127cf50e6a6860be.jpg",
+        "executables": ["TowerFall.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "VALORANT",
+        "icon": "https://cdn2.steamgriddb.com/icon_thumb/9e82757e9a1c12cb710ad680db11f6f1.png",
+        "executables": ["VALORANT-Win64-Shipping.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    }
 ]

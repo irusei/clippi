@@ -77,9 +77,9 @@ fn get_clips(handle: AppHandle) -> Vec<Clip> {
 
 #[tauri::command]
 fn open_clip_in_explorer(clip: Clip) {
-    let path = PathBuf::from(prefix_path(&clip.path));
     #[cfg(target_os = "windows")]
     {
+        let path = PathBuf::from(&clip.path.replace("/", "\\"));
         Command::new("explorer")
             .args(["/select,", path.to_str().unwrap()])
             .spawn()
@@ -88,6 +88,7 @@ fn open_clip_in_explorer(clip: Clip) {
     }
     #[cfg(target_os = "linux")]
     {
+        let path = PathBuf::from(&clip.path);
         let folder = path.parent().unwrap();
         Command::new("xdg-open")
             .arg(folder)
@@ -182,6 +183,7 @@ pub fn run() {
         watcher::init();
     });
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .setup(|app| {
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
@@ -222,7 +224,9 @@ pub fn run() {
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
-                window.hide().unwrap();
+
+                let _ = window.minimize();
+                let _ = window.hide();
             }
         })
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {

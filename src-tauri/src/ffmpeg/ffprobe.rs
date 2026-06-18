@@ -1,5 +1,6 @@
 use std::path::Path;
-use std::process::Command;
+
+use crate::ffmpeg::process;
 
 #[cfg(target_os = "windows")]
 const FFPROBE_NAME: &str = "./ffprobe.exe";
@@ -7,8 +8,9 @@ const FFPROBE_NAME: &str = "./ffprobe.exe";
 const FFPROBE_NAME: &str = "ffprobe";
 
 pub fn duration(path: &Path) -> f64 {
-    let output = Command::new(FFPROBE_NAME)
-        .args([
+    let output = process::make(
+        FFPROBE_NAME,
+        &[
             "-v",
             "error",
             "-show_entries",
@@ -16,9 +18,10 @@ pub fn duration(path: &Path) -> f64 {
             "-of",
             "default=noprint_wrappers=1:nokey=1",
             path.to_str().unwrap(),
-        ])
-        .output()
-        .unwrap();
+        ],
+    )
+    .output()
+    .unwrap();
 
     String::from_utf8_lossy(&output.stdout)
         .trim()

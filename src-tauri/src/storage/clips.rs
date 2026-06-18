@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ffmpeg::{self, ffprobe},
+    integrations::game::events::GameIntegrationResult,
     send_clips,
     storage::{games::DetectedGameData, settings::get_clipping_folder},
 };
@@ -27,7 +28,7 @@ fn default_uuid() -> uuid::Uuid {
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Bookmark {
     pub name: String,
-    pub timestamp: u128,
+    pub timestamp: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -48,6 +49,8 @@ pub struct Clip {
     pub action_count: Vec<usize>,
     #[serde(default)]
     pub date: String,
+    #[serde(default)]
+    pub integration_result: Option<Box<dyn GameIntegrationResult>>,
 }
 
 static CLIPS: LazyLock<Mutex<Vec<Clip>>> = LazyLock::new(|| Mutex::new(load_from_file()));
@@ -59,25 +62,23 @@ fn split_last_dot(s: &str) -> Option<(&str, &str)> {
 }
 
 pub fn prefix_path(clip_path: &str) -> String {
-    let mut new_clip_path = clip_path.replace("\\", "/");
+    let clip_path = clip_path.trim_start_matches('/');
 
-    new_clip_path = new_clip_path
-        .strip_prefix("/")
-        .unwrap_or(clip_path)
+    let folder = get_clipping_folder()
+        .to_string_lossy()
+        .replace('\\', "/")
+        .trim_end_matches('/')
         .to_string();
 
-    let mut folder = get_clipping_folder();
-    folder.push(new_clip_path);
-    folder.to_string_lossy().to_string()
+    format!("{}/{}", folder, clip_path)
 }
 
 pub fn clean_path(clip_path: &str) -> String {
-    let folder = get_clipping_folder();
-    clip_path
-        .strip_prefix(&folder.to_string_lossy().to_string())
-        .unwrap_or(clip_path)
-        .to_string()
-        .replace("\\", "/")
+    let folder = get_clipping_folder().to_string_lossy().replace('\\', "/");
+
+    let path = clip_path.replace('\\', "/");
+
+    path.strip_prefix(&folder).unwrap_or(&path).to_string()
 }
 
 fn load_from_file() -> Vec<Clip> {
@@ -91,7 +92,14 @@ fn load_from_file() -> Vec<Clip> {
         false => vec![],
         true => {
             let file = File::open(&path).expect("Failed to open clips.json");
-            serde_json::from_reader(file).expect("Failed to deserialize json")
+            let clips: Vec<Clip> =
+                serde_json::from_reader(file).expect("Failed to deserialize json");
+
+            clips
+                .iter()
+                .cloned()
+                .filter(|clip| PathBuf::from(prefix_path(&clip.path)).exists())
+                .collect::<Vec<Clip>>()
         }
     }
 }
@@ -122,6 +130,7 @@ pub fn store_clip(
     game_data: DetectedGameData,
     bookmark_times: Vec<Bookmark>,
     action_count: Vec<usize>,
+    integration_result: Option<Box<dyn GameIntegrationResult>>,
 ) {
     // prepare move
     let clip_filename = clip_path.file_name().expect("Failed to get filename?");
@@ -160,7 +169,7 @@ pub fn store_clip(
             id: uuid::Uuid::new_v4(),
             clip_type: clip_type,
             path: clean_path(&new_path.to_string_lossy().to_string()),
-            title: clip_filename.to_string_lossy().to_string(),
+            title: format!("{} VOD", &game_data.name),
             duration: duration,
             game: game_data,
             size: file_size,
@@ -168,6 +177,7 @@ pub fn store_clip(
             bookmarks: bookmark_times,
             action_count: action_count,
             date: chrono::Local::now().format("%Y-%m-%d %H:%M").to_string(),
+            integration_result: integration_result,
         });
     }
     save_to_file();
@@ -176,7 +186,7 @@ pub fn store_clip(
 pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData, action_count: Vec<usize>) {
     // prepare move
     let clip_filename = clip_path.file_name().expect("Failed to get filename?");
-    if let Some((clip_name_no_extension, extension)) =
+    if let Some((_clip_name_no_extension, extension)) =
         split_last_dot(&clip_filename.to_string_lossy().to_string())
     {
         let mut new_path = get_clipping_folder();
@@ -188,9 +198,8 @@ pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData, action_co
         fs::create_dir_all(&new_path).unwrap();
 
         new_path.push(format!(
-            "{} - Trim {}.{}",
-            clip_name_no_extension,
-            fs::read_dir(&new_path).iter().len() + 1,
+            "{} - Trim.{}",
+            chrono::Local::now().format("%Y-%m-%d %H-%M-%S").to_string(),
             extension
         ));
 
@@ -221,14 +230,15 @@ pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData, action_co
                 id: uuid::Uuid::new_v4(),
                 clip_type: ClipType::Clip,
                 path: clean_path(&new_path.clone().to_string_lossy().to_string()),
-                title: new_path.file_name().unwrap().to_string_lossy().to_string(),
+                title: format!("{} - Trim", &game_data.name),
                 duration: duration,
                 game: game_data,
                 size: file_size,
                 thumbnail: clean_path(&thumbnail.to_string_lossy().to_string()),
-                bookmarks: Vec::new(), // reset bookmarks, maybe it's better if we don't?,
+                bookmarks: Vec::new(), // TODO: make this stay
                 action_count: action_count,
                 date: chrono::Local::now().format("%Y-%m-%d %H:%M").to_string(),
+                integration_result: None, // TODO: make this stay
             });
         }
         save_to_file();
