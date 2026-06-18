@@ -47,6 +47,7 @@ export interface Settings {
     discord_rpc_enabled: boolean;
     windows_autostart: boolean;
     bookmark_key: string;
+    recording_enabled: boolean;
 }
 
 export type BaseFilter = {

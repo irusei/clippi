@@ -32,6 +32,13 @@ pub struct Settings {
 
     #[serde(default = "default_bookmark_key")]
     pub bookmark_key: String,
+
+    #[serde(default = "default_recording_enabled")]
+    pub recording_enabled: bool,
+}
+
+fn default_recording_enabled() -> bool {
+    true
 }
 
 fn default_bookmark_key() -> String {
@@ -74,6 +81,7 @@ fn load_settings_from_file() -> Settings {
                 discord_rpc_enabled: false,
                 windows_autostart: false,
                 bookmark_key: String::from("F8"),
+                recording_enabled: true,
             }
         }
         true => {

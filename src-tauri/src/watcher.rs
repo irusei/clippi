@@ -26,6 +26,7 @@ use crate::{
     sound,
     storage::{
         clips::{store_clip, Bookmark},
+        game_preferences,
         games::DetectedGameData,
         settings::{get_clipping_folder, get_settings},
     },
@@ -182,9 +183,9 @@ pub fn handle_process(proc: Process) {
     if is_game {
         // wait for window
         // linux support doesn't have window waiting implemented yet, so we check on a os case basis
-        let mut titles: Vec<String> = vec![];
         #[cfg(target_os = "windows")]
         {
+            let mut titles: Vec<String> = vec![];
             match wait_for_window(&filename, 45) {
                 Ok(_) => {
                     titles = get_titles(proc.process_id);
@@ -195,12 +196,22 @@ pub fn handle_process(proc: Process) {
                 ),
             }
         }
+        #[cfg(not(target_os = "windows"))]
+        let titles: Vec<String> = vec![];
 
-        println!("FOUND GAME: {}", &filename);
         if let Some(detected_game) = detector::get_detected_game(&filename, &titles) {
-            let w_name = filename.clone();
-
+            // check global recording toggle
             let settings = get_settings();
+            if !settings.recording_enabled {
+                return;
+            }
+
+            // check per-game toggle
+            if !game_preferences::is_game_enabled(&detected_game.name) {
+                return;
+            }
+
+            let w_name = filename.clone();
 
             let recorder_settings = RecordingSettings {
                 resolution: settings.resolution,
@@ -214,7 +225,6 @@ pub fn handle_process(proc: Process) {
                 capture_mic: settings.capture_mic,
             };
 
-            let w_name = w_name.clone();
             let recorder_settings = recorder_settings.clone();
             let detected_game_cloned = detected_game.clone();
 

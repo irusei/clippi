@@ -7,20 +7,36 @@ import ProcessPicker from "../components/ProcessPicker";
 import { Plus, Save, Search, Trash } from "lucide-react";
 import { SettingsContainer } from "../components/ui/SettingsContainer";
 
+interface GamePreference {
+    enabled: boolean;
+}
+
 interface GameProps {
     game: DetectedGame;
     selected: boolean;
     onClick: () => void;
+    preferences: GamePreference | undefined;
+    onToggle: (name: string, enabled: boolean) => void;
 }
 
-export function GameView({ game, onClick, selected }: GameProps) {
+export function GameView({
+    game,
+    onClick,
+    selected,
+    preferences,
+    onToggle,
+}: GameProps) {
     return (
         <div
             className={`flex flex-row items-center gap-x-4 px-2 py-2 bg-mocha-base border-mocha-base border rounded-sm text-mocha-text ${selected ? "border-mocha-mauve bg-mocha-mauve/20" : ""} hover:border-mocha-mauve transition-all hover:cursor-pointer`}
             onClick={onClick}
         >
             <img className="w-8 h-8" src={game.icon ?? ""} />
-            <p className="truncate text-md">{game.name}</p>
+            <p className="truncate text-md flex-1">{game.name}</p>
+            <Switch
+                checked={preferences?.enabled ?? true}
+                onChecked={(value) => onToggle(game.name, value)}
+            />
         </div>
     );
 }
@@ -29,11 +45,31 @@ export default function GameTab() {
     let [chosenGame, setChosenGame] = useState<DetectedGame | null>(null);
     let [modifiedGame, setModifiedGame] = useState<DetectedGame | null>(null);
     let [searchQuery, setSearchQuery] = useState<string>("");
+    let [gamePreferences, setGamePreferences] = useState<
+        Record<string, GamePreference>
+    >({});
 
     function getGames() {
         invoke("get_games").then((games) => {
             setSupportedGames(games as DetectedGame[]);
         });
+    }
+
+    function getPreferences() {
+        invoke("get_game_preferences").then((prefs) => {
+            setGamePreferences(prefs as Record<string, GamePreference>);
+        });
+    }
+
+    function toggleGameEnabled(gameName: string, enabled: boolean) {
+        invoke("set_game_preference", { gameName, enabled });
+        setGamePreferences((prev) => ({
+            ...prev,
+            [gameName]: {
+                ...prev[gameName],
+                enabled,
+            },
+        }));
     }
 
     function editGame() {
@@ -55,6 +91,7 @@ export default function GameTab() {
 
     useEffect(() => {
         getGames();
+        getPreferences();
     }, []);
 
     return (
@@ -128,6 +165,8 @@ export default function GameTab() {
                                             chosenGame != null &&
                                             chosenGame == game
                                         }
+                                        preferences={gamePreferences[game.name]}
+                                        onToggle={toggleGameEnabled}
                                         onClick={() => {
                                             setChosenGame(game);
                                             setModifiedGame(game);

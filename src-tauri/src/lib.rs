@@ -14,6 +14,7 @@ use crate::{
     integrations::discord::rpc,
     storage::{
         clips::{clean_path, prefix_path, Clip},
+        game_preferences::{self as game_pref_storage},
         games::DetectedGameData,
         settings::{get_clipping_folder, Settings},
     },
@@ -162,6 +163,16 @@ fn edit_game(old_game: DetectedGameData, new_game: DetectedGameData) {
 }
 
 #[tauri::command]
+fn get_game_preferences() -> std::collections::HashMap<String, game_pref_storage::GamePreference> {
+    game_pref_storage::get_game_preferences()
+}
+
+#[tauri::command]
+fn set_game_preference(game_name: String, enabled: bool) {
+    game_pref_storage::set_game_preference(&game_name, enabled);
+}
+
+#[tauri::command]
 fn list_processes() -> Vec<String> {
     platform_utils::list_processes()
 }
@@ -252,6 +263,8 @@ pub fn run() {
             edit_game,
             get_current_game,
             list_processes,
+            get_game_preferences,
+            set_game_preference,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

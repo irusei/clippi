@@ -205,6 +205,7 @@ export default function SettingTab() {
                                 }
                             />
                         </SettingsContainer>
+
                         <SettingsContainer
                             title="Desktop Audio"
                             description="Additionally capture desktop audio on top of game sounds"
@@ -216,6 +217,26 @@ export default function SettingTab() {
                                         "capture_desktop_audio",
                                         value,
                                     )
+                                }
+                            />
+                        </SettingsContainer>
+                    </div>
+                </section>
+
+                <section className="flex flex-col gap-4">
+                    <h3 className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">
+                        Recording
+                    </h3>
+
+                    <div className="flex flex-col gap-3 px-1">
+                        <SettingsContainer
+                            title="Enable Recording"
+                            description="Whether to record gameplay"
+                        >
+                            <Switch
+                                checked={settings.recording_enabled}
+                                onChecked={(value) =>
+                                    updateSetting("recording_enabled", value)
                                 }
                             />
                         </SettingsContainer>
