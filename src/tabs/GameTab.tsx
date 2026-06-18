@@ -97,7 +97,7 @@ export default function GameTab() {
     return (
         <div className="bg-mocha-mantle w-full h-screen">
             <div className="px-10 py-8 h-full flex flex-col overflow-hidden">
-                <div className="flex flex-row justify-between items-center space-x-60">
+                <div className="flex flex-row justify-between items-center pb-2 mb-2 border-b border-mocha-surface0">
                     <h2 className="text-3xl font-semibold text-mocha-text mb-4">
                         Supported games
                     </h2>
@@ -126,7 +126,7 @@ export default function GameTab() {
                                 });
                             });
                         }}
-                        className="bg-mocha-mauve hover:bg-mocha-mauve/80 transition-colors rounded-md py-2 px-4 font-semibold text-mocha-base mt-2 items-center flex flex-row gap-x-2"
+                        className="bg-mocha-mauve hover:bg-mocha-mauve/80 transition-colors rounded-md py-2 px-4 font-semibold text-mocha-base items-center flex flex-row gap-x-2"
                     >
                         <Plus className="w-4 h-4" />
                         <p>New game</p>
@@ -276,10 +276,6 @@ export default function GameTab() {
                                                     key={index}
                                                     className="flex items-center gap-2"
                                                 >
-                                                    <span className="text-xs text-mocha-overlay1 w-6">
-                                                        {index + 1}.
-                                                    </span>
-
                                                     <Input
                                                         className="bg-mocha-mantle flex-1"
                                                         type="text"
@@ -322,7 +318,7 @@ export default function GameTab() {
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col gap-4 p-4 rounded-lg bg-mocha-base">
+                                <div className="flex flex-col p-4 rounded-lg bg-mocha-base gap-y-4">
                                     <div className="flex flex-row justify-between">
                                         <div className="flex flex-col gap-1">
                                             <span className="text-sm font-medium text-mocha-text">
@@ -348,57 +344,59 @@ export default function GameTab() {
                                         </button>
                                     </div>
 
-                                    <div className="flex flex-col gap-y-2">
-                                        {modifiedGame.title_regex.map(
-                                            (regex, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <span className="text-xs text-mocha-overlay1 w-6">
-                                                        {index + 1}.
-                                                    </span>
-
-                                                    <Input
-                                                        className="bg-mocha-mantle flex-1"
-                                                        type="text"
-                                                        value={regex}
-                                                        onChange={(value) => {
-                                                            const updated = [
-                                                                ...modifiedGame.title_regex,
-                                                            ];
-                                                            updated[index] =
-                                                                value;
-                                                            updateField(
-                                                                "title_regex",
-                                                                updated,
-                                                            );
-                                                        }}
-                                                    />
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const updated = [
-                                                                ...modifiedGame.title_regex,
-                                                            ];
-                                                            updated.splice(
-                                                                index,
-                                                                1,
-                                                            );
-                                                            updateField(
-                                                                "title_regex",
-                                                                updated,
-                                                            );
-                                                        }}
-                                                        className="text-red-400 hover:text-red-500 px-2"
+                                    {modifiedGame.title_regex.length > 0 && (
+                                        <div className="flex flex-col gap-y-2">
+                                            {modifiedGame.title_regex.map(
+                                                (regex, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="flex items-center gap-2"
                                                     >
-                                                        <Trash className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            ),
-                                        )}
-                                    </div>
+                                                        <Input
+                                                            className="bg-mocha-mantle flex-1"
+                                                            type="text"
+                                                            value={regex}
+                                                            onChange={(
+                                                                value,
+                                                            ) => {
+                                                                const updated =
+                                                                    [
+                                                                        ...modifiedGame.title_regex,
+                                                                    ];
+                                                                updated[index] =
+                                                                    value;
+                                                                updateField(
+                                                                    "title_regex",
+                                                                    updated,
+                                                                );
+                                                            }}
+                                                        />
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const updated =
+                                                                    [
+                                                                        ...modifiedGame.title_regex,
+                                                                    ];
+                                                                updated.splice(
+                                                                    index,
+                                                                    1,
+                                                                );
+                                                                updateField(
+                                                                    "title_regex",
+                                                                    updated,
+                                                                );
+                                                            }}
+                                                            className="text-red-400 hover:text-red-500 px-2"
+                                                        >
+                                                            <Trash className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                ),
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 

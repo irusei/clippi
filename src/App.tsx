@@ -51,7 +51,7 @@ interface SidebarProps {
 
 function Sidebar({ currentTab, setCurrentTab }: SidebarProps) {
     return (
-        <div className="z-10 flex flex-col w-16 h-screen bg-mocha-base border-r border-mocha-crust/50">
+        <div className="z-10 flex flex-col w-16 h-screen bg-mocha-base border-r border-mocha-surface0">
             <SidebarButton
                 selected={currentTab === Tab.Clips}
                 icon={<VideoIcon className="w-full h-full" />}
@@ -121,7 +121,7 @@ export default function App() {
 
             {/* now playing game panel */}
             {currentGame != null && (
-                <div className="w-full absolute bottom-0 h-10 bg-mocha-base items-center text-center flex p-4 gap-x-2 justify-end border-t border-mocha-crust/50">
+                <div className="w-full absolute bottom-0 h-10 bg-mocha-base items-center text-center flex p-4 gap-x-2 justify-end border-t border-mocha-surface0">
                     <img className="h-5 w-5" src={currentGame.icon ?? ""} />
                     <p className="text-mocha-text">{currentGame.name}</p>
                     <div className="h-2 w-2 rounded-xl bg-mocha-green" />
