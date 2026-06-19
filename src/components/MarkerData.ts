@@ -1,6 +1,6 @@
 import { Result, Bookmark as BookmarkType } from "../types";
 import { LeagueGameEvent } from "../integration/league/LeagueTypes";
-
+import { getPlayerPosition } from "../integration/league/LeagueUtils";
 export interface MarkerData {
     label: string;
     time: number;
@@ -39,9 +39,25 @@ export function getMarkerData(
                         event.KillerName === username ||
                         event.Assisters.includes(username)
                     ) {
-                        add(event, `KILL`, "bg-mocha-mauve");
+                        const enemyPos = getPlayerPosition(
+                            integration,
+                            event.VictimName,
+                        );
+                        add(
+                            event,
+                            `KILLED ${enemyPos != null ? enemyPos.toUpperCase() : event.VictimName}`,
+                            "bg-mocha-mauve",
+                        );
                     } else if (event.VictimName === username) {
-                        add(event, `DEATH`, "bg-mocha-red");
+                        const killerPos = getPlayerPosition(
+                            integration,
+                            event.KillerName,
+                        );
+                        add(
+                            event,
+                            `DIED TO ${killerPos != null ? killerPos.toUpperCase() : event.KillerName}`,
+                            "bg-mocha-red",
+                        );
                     }
                     break;
                 case "TurretKilled":
@@ -53,14 +69,35 @@ export function getMarkerData(
                     }
                     break;
                 case "BaronKill":
+                    if (
+                        event.KillerName === username ||
+                        event.Assisters.includes(username)
+                    ) {
+                        add(event, "TOOK BARON", "bg-mocha-lavender");
+                    }
+                    break;
                 case "DragonKill":
+                    if (
+                        event.KillerName === username ||
+                        event.Assisters.includes(username)
+                    ) {
+                        add(event, `TOOK DRAGON`, "bg-mocha-lavender");
+                    }
+                    break;
                 case "HeraldKill":
+                    if (
+                        event.KillerName === username ||
+                        event.Assisters.includes(username)
+                    ) {
+                        add(event, "TOOK HERALD", "bg-mocha-lavender");
+                    }
+                    break;
                 case "HordeKill":
                     if (
                         event.KillerName === username ||
                         event.Assisters.includes(username)
                     ) {
-                        add(event, "OBJECTIVE", "bg-mocha-lavender");
+                        add(event, "TOOK VOIDGRUBS", "bg-mocha-lavender");
                     }
                     break;
             }

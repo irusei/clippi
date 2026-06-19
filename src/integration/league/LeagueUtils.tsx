@@ -8,6 +8,16 @@ export function getPlayerData(
     return integration.data.players.find((p) => p.riotId === riotId) ?? null;
 }
 
+export function getPlayerPosition(
+    integration: LeagueResult,
+    riotName: string,
+): string | null {
+    const player = integration.data.players.find(
+        (p) => p.riotId.split("#")[0] === riotName,
+    );
+    return player ? getPositionName(player.position) : null;
+}
+
 export function getOppositeTeam(team: "CHAOS" | "ORDER"): "CHAOS" | "ORDER" {
     return team === "CHAOS" ? "ORDER" : "CHAOS";
 }
