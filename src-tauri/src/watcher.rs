@@ -183,9 +183,12 @@ pub fn handle_process(proc: Process) {
     if is_game {
         // wait for window
         // linux support doesn't have window waiting implemented yet, so we check on a os case basis
+        #[cfg(not(target_os = "windows"))]
+        let titles: Vec<String> = vec![];
+        #[cfg(target_os = "windows")]
+        let mut titles: Vec<String> = vec![];
         #[cfg(target_os = "windows")]
         {
-            let mut titles: Vec<String> = vec![];
             match wait_for_window(&filename, 45) {
                 Ok(_) => {
                     titles = get_titles(proc.process_id);
@@ -196,9 +199,6 @@ pub fn handle_process(proc: Process) {
                 ),
             }
         }
-        #[cfg(not(target_os = "windows"))]
-        let titles: Vec<String> = vec![];
-
         if let Some(detected_game) = detector::get_detected_game(&filename, &titles) {
             // check global recording toggle
             let settings = get_settings();
