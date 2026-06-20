@@ -7,9 +7,12 @@ import {
     getImageFromSpellName,
     getSelf,
     getPositionName,
-} from "../integration/league/LeagueUtils";
-import { LeagueResult, LeaguePlayer } from "../integration/league/LeagueTypes";
-import { formatTime } from "../utils";
+} from "../../integration/league/LeagueUtils";
+import {
+    LeagueResult,
+    LeaguePlayer,
+} from "../../integration/league/LeagueTypes";
+import { formatTime } from "../../utils";
 
 function groupPlayersByTeam(
     players: LeaguePlayer[],

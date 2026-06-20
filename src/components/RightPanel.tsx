@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { VodClip } from "../types";
 import BookmarksTab from "./BookmarksTab";
-import ScoreboardTab from "./ScoreboardTab";
+import ScoreboardTab from "./integration/ScoreboardTab";
 import { LeagueResult } from "../integration/league/LeagueTypes";
 
 interface RightPanelProps {

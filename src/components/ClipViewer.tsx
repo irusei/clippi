@@ -29,7 +29,7 @@ import Input from "./ui/Input";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import RightPanel from "./RightPanel";
-import { getMarkerData } from "./MarkerData";
+import { getMarkerData } from "../integration/MarkerData";
 
 interface ClipViewerProps {
     clip: VodClip;

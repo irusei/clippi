@@ -97,7 +97,7 @@ export default function GameTab() {
     return (
         <div className="bg-mocha-mantle w-full h-screen">
             <div className="px-10 py-8 h-full flex flex-col overflow-hidden">
-                <div className="flex flex-row justify-between items-center pb-2 mb-2 border-b border-mocha-surface0">
+                <div className="flex flex-row justify-between items-center mb-4">
                     <h2 className="text-3xl font-semibold text-mocha-text mb-4">
                         Supported games
                     </h2>
@@ -141,7 +141,7 @@ export default function GameTab() {
                                 value={searchQuery}
                                 placeholder="Search..."
                                 onChange={(value) => setSearchQuery(value)}
-                                className="focus:border-none border-none max-w-40 rounded-sm"
+                                className="flex-1 focus:border-none border-none rounded-sm"
                             />
                         </div>
                         <div className="flex flex-col gap-y-2 overflow-y-auto pr-4">

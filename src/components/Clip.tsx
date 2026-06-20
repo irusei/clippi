@@ -1,10 +1,10 @@
 import { Play, Pencil, Trash } from "lucide-react";
 import { VodClip } from "../types";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { formatTime, parseSize } from "../utils";
+import { formatTime, formatBytes } from "../utils";
 import { useState } from "react";
 import Input from "./ui/Input";
-import LeagueClipCard from "./integration/LeagueClipCard";
+import LeagueClipCard from "./integration/league/LeagueClipCard";
 import { confirm } from "@tauri-apps/plugin-dialog";
 
 interface ClipProps {
@@ -90,7 +90,7 @@ export default function Clip({ clip, onClick }: ClipProps) {
 
                     <div className="flex justify-between items-center text-xs text-mocha-overlay2">
                         <div className="flex gap-2">
-                            <p>{parseSize(clip.size)}</p>
+                            <p>{formatBytes(clip.size)}</p>
                             <p>{clip.date}</p>
                         </div>
                     </div>

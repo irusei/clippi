@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Filter } from "lucide-react";
 import { VodClip } from "../types";
-import { getMarkerData } from "./MarkerData";
+import { getMarkerData } from "../integration/MarkerData";
 import { formatTime } from "../utils";
 
 type FilterMode = "all" | "bookmarks" | "game";

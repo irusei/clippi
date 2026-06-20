@@ -6,11 +6,11 @@ import {
     getImageFromSpellName,
     getOpponentLaner,
     getSelf,
-} from "../../integration/league/LeagueUtils";
+} from "../../../integration/league/LeagueUtils";
 import {
     LeaguePlayer,
     LeagueResult,
-} from "../../integration/league/LeagueTypes";
+} from "../../../integration/league/LeagueTypes";
 
 interface LeagueClipCardPlayerProps {
     isSelf: boolean;

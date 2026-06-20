@@ -17,6 +17,7 @@ use crate::{
         game_preferences::{self as game_pref_storage},
         games::DetectedGameData,
         settings::{get_clipping_folder, Settings},
+        storage_info::StorageInfo,
     },
 };
 
@@ -187,6 +188,11 @@ fn get_current_game() -> Option<DetectedGameData> {
     watcher::get_current_game()
 }
 
+#[tauri::command]
+fn get_storage_info() -> StorageInfo {
+    storage::storage_info::get_storage_info()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     spawn(|| {
@@ -265,6 +271,7 @@ pub fn run() {
             list_processes,
             get_game_preferences,
             set_game_preference,
+            get_storage_info,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

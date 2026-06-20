@@ -7,7 +7,6 @@ import ClipViewer from "../components/ClipViewer";
 import { FilterMenu } from "../components/FilterMenu";
 import { filterClips } from "../utils/filterClips";
 import { FilterOptions } from "../types";
-import { parseSize } from "../utils";
 import { platform } from "@tauri-apps/plugin-os";
 import { Select } from "../components/ui/Select";
 
@@ -85,18 +84,6 @@ export default function ClipTab() {
                             <h2 className="text-3xl font-semibold text-mocha-text mb-2">
                                 Your clips
                             </h2>
-                            {clips.length > 0 && (
-                                <h2 className="text-lg font-semibold text-mocha-overlay1 mb-2 text-center">
-                                    {parseSize(
-                                        clips
-                                            .map((clip) => clip.size)
-                                            .reduce(
-                                                (total_size, cur_size) =>
-                                                    total_size + cur_size,
-                                            ),
-                                    )}
-                                </h2>
-                            )}
                         </div>
                         <label className="text-sm font-medium text-mocha-overlay2">
                             Filter

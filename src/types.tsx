@@ -61,3 +61,11 @@ export type LeagueFilter = BaseFilter & {
 };
 
 export type FilterOptions = BaseFilter | LeagueFilter;
+
+export interface StorageInfo {
+    clipping_folder: string;
+    total_space: number;
+    free_space: number;
+    used_space: number;
+    clips_size: number;
+}

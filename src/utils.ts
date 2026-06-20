@@ -5,17 +5,13 @@ export const formatTime = (time: number) => {
     return `${mins}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
 };
 
-export const parseSize = (bytes: number) => {
-    let kb = bytes / 1000;
-    let mb = kb / 1000;
-    let gb = mb / 1000;
-
-    if (gb > 1) {
-        return gb.toFixed(2) + "GB";
-    } else {
-        return mb.toFixed(2) + "MB";
-    }
-};
+export function formatBytes(bytes: number): string {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
 
 export function smooth(arr: number[], window: number = 3): number[] {
     return arr.map((_, i) => {
