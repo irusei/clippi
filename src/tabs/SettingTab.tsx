@@ -10,7 +10,7 @@ import { platform } from "@tauri-apps/plugin-os";
 import { Folder, HardDrive } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { formatBytes } from "../utils";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 
 export default function SettingTab() {
     const [settings, setSettings] = useState<Settings | null>(null);
@@ -46,6 +46,7 @@ export default function SettingTab() {
         const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
         invoke("set_settings", { newSettings: newSettings });
+        emit("settings_updated");
     };
 
     function getResolution() {
@@ -281,6 +282,26 @@ export default function SettingTab() {
                                 </div>
                             </div>
                         )}
+
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-mocha-text">
+                                Max Storage Limit
+                            </label>
+                            <Select
+                                value={settings.max_storage_limit}
+                                onChange={(value) =>
+                                    updateSetting("max_storage_limit", value)
+                                }
+                                options={[
+                                    ["10GB", "10GB"],
+                                    ["25GB", "25GB"],
+                                    ["50GB", "50GB"],
+                                    ["100GB", "100GB"],
+                                    ["250GB", "250GB"],
+                                    ["Unlimited", "Unlimited"],
+                                ]}
+                            />
+                        </div>
                     </div>
                 </section>
 

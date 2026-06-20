@@ -49,6 +49,7 @@ export interface Settings {
     windows_autostart: boolean;
     bookmark_key: string;
     recording_enabled: boolean;
+    max_storage_limit: string;
     upload_endpoint?: string | null;
     upload_token?: string | null;
 }

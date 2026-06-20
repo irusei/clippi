@@ -25,10 +25,12 @@ use crate::{
     recorder::recorder::{record, RecordingSettings},
     sound,
     storage::{
+        self,
         clips::{store_clip, Bookmark},
         game_preferences,
         games::DetectedGameData,
         settings::{get_clipping_folder, get_settings},
+        storage_info,
     },
 };
 
@@ -208,6 +210,11 @@ pub fn handle_process(proc: Process) {
 
             // check per-game toggle
             if !game_preferences::is_game_enabled(&detected_game.name) {
+                return;
+            }
+
+            // check storage limits
+            if storage::settings::is_over_limit(storage_info::calculate_clips_size()) {
                 return;
             }
 

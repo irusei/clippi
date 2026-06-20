@@ -41,6 +41,9 @@ pub struct Settings {
 
     #[serde(default)]
     pub upload_token: Option<String>,
+
+    #[serde(default = "default_max_storage_limit")]
+    pub max_storage_limit: String,
 }
 
 fn default_recording_enabled() -> bool {
@@ -51,12 +54,32 @@ fn default_bookmark_key() -> String {
     String::from("F8")
 }
 
+fn default_max_storage_limit() -> String {
+    String::from("Unlimited")
+}
+
 static SETTINGS: LazyLock<Mutex<Settings>> =
     LazyLock::new(|| Mutex::new(load_settings_from_file()));
 
 pub fn get_settings() -> Settings {
     let settings_locked = SETTINGS.lock().unwrap();
     return settings_locked.clone();
+}
+
+pub fn is_over_limit(total_clip_size: u64) -> bool {
+    fn remove_unit_from_max_clip_size(max_clip_size: String) -> u64 {
+        max_clip_size.split_once("GB").unwrap().0.parse().unwrap()
+    }
+
+    let max_clip_size = get_settings().max_storage_limit;
+    if max_clip_size == "Unlimited" {
+        return false;
+    }
+
+    let gb_bytes = 1024 * 1024 * 1024;
+    let max_clip_size_digit = remove_unit_from_max_clip_size(max_clip_size);
+
+    return total_clip_size >= max_clip_size_digit * gb_bytes;
 }
 
 fn load_settings_from_file() -> Settings {
@@ -90,6 +113,7 @@ fn load_settings_from_file() -> Settings {
                 recording_enabled: true,
                 upload_endpoint: None,
                 upload_token: None,
+                max_storage_limit: String::from("Unlimited"),
             }
         }
         true => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { DetectedGame, VodClip } from "../types";
+import { DetectedGame, Settings, StorageInfo, VodClip } from "../types";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import Clip from "../components/Clip";
@@ -9,6 +9,8 @@ import { filterClips } from "../utils/filterClips";
 import { FilterOptions } from "../types";
 import { platform } from "@tauri-apps/plugin-os";
 import { Select } from "../components/ui/Select";
+import { isOverStorageLimit } from "../utils";
+import { AlertCircle } from "lucide-react";
 
 function getSortedUniqueGames(clips: VodClip[]): [DetectedGame, number][] {
     let sortedGames: Map<string, [DetectedGame, number]> = new Map();
@@ -35,6 +37,12 @@ export default function ClipTab() {
     const [filterOptions, setFilterOptions] = useState<FilterOptions>({
         type: "",
     });
+    const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
+    const [maxStorageLimit, setMaxStorageLimit] = useState<string>("unlimited");
+
+    const isStorageLimitReached =
+        storageInfo &&
+        isOverStorageLimit(storageInfo.clips_size, maxStorageLimit);
 
     // runs on trim, sets clip to trim
     function setSelectedClipToLastClip() {
@@ -69,17 +77,40 @@ export default function ClipTab() {
     // set and update unique games for filtering
     useEffect(() => {
         setUniqueGames(getSortedUniqueGames(clips));
+
+        // update storage limit in case settings change
+        const ul1 = listen("settings_updated", () => {
+            invoke("get_storage_info").then((res) => {
+                setStorageInfo(res as StorageInfo);
+            });
+            invoke("get_settings").then((res) => {
+                const settings = res as Settings;
+                setMaxStorageLimit(settings.max_storage_limit as string);
+            });
+        });
+
+        invoke("get_storage_info").then((res) => {
+            setStorageInfo(res as StorageInfo);
+        });
+        invoke("get_settings").then((res) => {
+            const settings = res as Settings;
+            setMaxStorageLimit(settings.max_storage_limit as string);
+        });
+
+        return () => {
+            ul1.then((ul) => ul());
+        };
     }, [clips]);
 
     useEffect(() => {
-        const ul = listen("set_clips", (event) => {
+        const ul1 = listen("set_clips", (event) => {
             setClips(event.payload as VodClip[]);
         });
 
         getClips();
 
         return () => {
-            ul.then((ul) => ul());
+            ul1.then((ul) => ul());
         };
     }, []);
 
@@ -158,6 +189,22 @@ export default function ClipTab() {
                                 clips={clips}
                             />
                         </div>
+
+                        {isStorageLimitReached && (
+                            <div className="flex items-center gap-3 px-4 py-3 border border-mocha-red rounded-lg">
+                                <AlertCircle className="w-5 h-5 text-mocha-red" />
+                                <div>
+                                    <p className="text-sm font-medium text-mocha-red">
+                                        Storage limit reached
+                                    </p>
+                                    <p className="text-xs text-mocha-red">
+                                        You cannot record clips until you free
+                                        up space or increase your storage limit
+                                        in settings.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         <div className={"flex flex-col gap-3"}>
                             {filterClips(

@@ -127,7 +127,8 @@ export function Select({
                     <input
                         value={
                             options
-                                ? options.find((x) => x[1] == value)![0] || ""
+                                ? (options.find((x) => x[1] == value)! ??
+                                      [])[0] || ""
                                 : ""
                         }
                         readOnly

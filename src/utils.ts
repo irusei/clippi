@@ -22,3 +22,17 @@ export function smooth(arr: number[], window: number = 3): number[] {
         return sum / slice.length;
     });
 }
+
+export function parseStorageLimit(limit: string): number {
+    if (limit === "Unlimited") return Infinity;
+
+    const split = limit.split("GB")!;
+
+    const value = parseInt(split[0]);
+    return value * 1024 * 1024 * 1024;
+}
+
+export function isOverStorageLimit(usedBytes: number, limit: string): boolean {
+    const limitBytes = parseStorageLimit(limit);
+    return usedBytes >= limitBytes!;
+}

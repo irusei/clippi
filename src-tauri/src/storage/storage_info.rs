@@ -30,7 +30,7 @@ pub fn get_storage_info() -> StorageInfo {
     }
 }
 
-fn calculate_clips_size() -> u64 {
+pub fn calculate_clips_size() -> u64 {
     get_clips().iter().map(|c| c.size).sum()
 }
 
