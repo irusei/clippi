@@ -47,6 +47,14 @@ export function Select({
             }
         }
 
+        // validate select options
+        if (
+            options &&
+            options.length > 0 &&
+            !options.find((opt) => opt[1] == value)
+        ) {
+            onChange?.(options[0][1]);
+        }
         document.addEventListener("mousedown", handleClickOutside);
         return () =>
             document.removeEventListener("mousedown", handleClickOutside);
@@ -117,7 +125,11 @@ export function Select({
                     </div>
                 ) : (
                     <input
-                        value={value || ""}
+                        value={
+                            options
+                                ? options.find((x) => x[1] == value)![0] || ""
+                                : ""
+                        }
                         readOnly
                         placeholder={placeholderValue || "Select an option"}
                         className="w-full bg-transparent text-mocha-text focus:outline-none"

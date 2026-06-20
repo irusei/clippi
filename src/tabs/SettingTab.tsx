@@ -162,7 +162,7 @@ export default function SettingTab() {
                                 options={[
                                     ["x264 (CPU)", "X264"],
                                     ["H264", "H264"],
-                                    ["HEVC", "H265"],
+                                    ["HEVC", "HEVC"],
                                     ["AV1", "AV1"],
                                 ]}
                             />
