@@ -1,8 +1,10 @@
-import { Play, Pencil, Trash } from "lucide-react";
+import { Play, Pencil, Trash, Cloud } from "lucide-react";
 import { VodClip } from "../types";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { formatTime, formatBytes } from "../utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import Input from "./ui/Input";
 import LeagueClipCard from "./integration/league/LeagueClipCard";
 import { confirm } from "@tauri-apps/plugin-dialog";
@@ -15,6 +17,18 @@ interface ClipProps {
 export default function Clip({ clip, onClick }: ClipProps) {
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [titleInput, setTitleInput] = useState(clip.title);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+
+    useEffect(() => {
+        const unlisten = listen<number>("upload_progress", (event) => {
+            setUploadProgress(event.payload);
+        });
+
+        return () => {
+            unlisten.then((ul) => ul());
+        };
+    }, []);
 
     return (
         <div
@@ -104,7 +118,52 @@ export default function Clip({ clip, onClick }: ClipProps) {
                     />
                 )}
             </div>
-            <div className="flex-1 justify-end flex flex-row p-6 items-center">
+            <div className="flex-1 justify-end flex flex-row p-6 items-center gap-3">
+                {clip.remote_path ? (
+                    <div
+                        className="flex items-center gap-1 text-xs text-mocha-green"
+                        title="Already uploaded"
+                        onClick={() => writeText(clip.remote_path as string)}
+                    >
+                        <Cloud className="w-4 h-4" />
+                        <span>Uploaded</span>
+                    </div>
+                ) : (
+                    <>
+                        {isUploading && (
+                            <div className="flex items-center gap-2">
+                                <div className="w-16 h-1.5 bg-mocha-surface0 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-mocha-mauve rounded-full transition-all"
+                                        style={{ width: `${uploadProgress}%` }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        <Cloud
+                            className="text-mocha-text hover:text-mocha-mauve w-4 h-4 cursor-pointer"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (clip.remote_path) return;
+                                setIsUploading(true);
+                                setUploadProgress(0);
+
+                                invoke("upload_clip", { clip })
+                                    .then((res) => {
+                                        writeText(res as string);
+                                        setIsUploading(false);
+                                        setUploadProgress(0);
+                                    })
+                                    .catch((err) => {
+                                        setIsUploading(false);
+                                        setUploadProgress(0);
+                                        alert(err);
+                                    });
+                            }}
+                        />
+                    </>
+                )}
                 <Trash
                     className="text-mocha-red w-4 h-4"
                     onClick={(e) => {

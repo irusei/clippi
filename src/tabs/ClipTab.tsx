@@ -52,9 +52,17 @@ export default function ClipTab() {
                 "unfortunately due to tauri requiring a merged PR (#14402) clip playback isn't really possible atm, this will be fixed when this gets hopefully merged",
             );
     }
+
     function getClips() {
         invoke("get_clips").then((res) => {
             setClips(res as VodClip[]);
+            if (selectedClip == null) return;
+            for (const clip of res as VodClip[]) {
+                if (clip.id === selectedClip?.id) {
+                    setSelectedClip(clip);
+                    break;
+                }
+            }
         });
     }
 
@@ -173,6 +181,7 @@ export default function ClipTab() {
                     clip={selectedClip}
                     onExitClip={() => setSelectedClip(null)}
                     setSelectedClipToLastClip={setSelectedClipToLastClip}
+                    reloadClips={getClips}
                 />
             )}
         </div>

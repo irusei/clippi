@@ -35,6 +35,12 @@ pub struct Settings {
 
     #[serde(default = "default_recording_enabled")]
     pub recording_enabled: bool,
+
+    #[serde(default)]
+    pub upload_endpoint: Option<String>,
+
+    #[serde(default)]
+    pub upload_token: Option<String>,
 }
 
 fn default_recording_enabled() -> bool {
@@ -82,6 +88,8 @@ fn load_settings_from_file() -> Settings {
                 windows_autostart: false,
                 bookmark_key: String::from("F8"),
                 recording_enabled: true,
+                upload_endpoint: None,
+                upload_token: None,
             }
         }
         true => {

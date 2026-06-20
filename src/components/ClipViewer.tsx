@@ -13,9 +13,12 @@ import {
     VolumeOff,
     Pencil,
     PanelRightOpen,
+    Cloud,
 } from "lucide-react";
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { formatTime, smooth } from "../utils";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import TimelineMarker from "./TimelineMarker";
 import {
     Line,
@@ -26,7 +29,6 @@ import {
     YAxis,
 } from "recharts";
 import Input from "./ui/Input";
-import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import RightPanel from "./RightPanel";
 import { getMarkerData } from "../integration/MarkerData";
@@ -35,12 +37,14 @@ interface ClipViewerProps {
     clip: VodClip;
     onExitClip: () => void;
     setSelectedClipToLastClip: () => void;
+    reloadClips: () => void;
 }
 
 export default function ClipViewer({
     clip,
     onExitClip,
     setSelectedClipToLastClip,
+    reloadClips,
 }: ClipViewerProps) {
     const playerRef = useRef<HTMLVideoElement | null>(null);
     const timelineRef = useRef<HTMLDivElement | null>(null);
@@ -55,6 +59,18 @@ export default function ClipViewer({
     const [titleInput, setTitleInput] = useState(clip.title);
     const [mouseDown, setMouseDown] = useState(false);
     const [showRightPanel, setShowRightPanel] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+
+    useEffect(() => {
+        const unlisten = listen<number>("upload_progress", (event) => {
+            setUploadProgress(event.payload);
+        });
+
+        return () => {
+            unlisten.then((ul) => ul());
+        };
+    }, []);
 
     const handleMouseMove = useCallback(
         (e: MouseEvent) => {
@@ -100,7 +116,7 @@ export default function ClipViewer({
         return () => {
             unlisten.then((ul) => ul());
         };
-    }, [clip]);
+    }, [clip.id]);
 
     useEffect(() => {
         if (isDragging) {
@@ -158,7 +174,7 @@ export default function ClipViewer({
             index: d.index,
             value: smoothedValues[i],
         }));
-    }, [clip]);
+    }, [clip.id]);
 
     const adjustTimeline = (e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget!.getBoundingClientRect();
@@ -217,6 +233,55 @@ export default function ClipViewer({
                     )}
                 </div>
                 <div className="flex items-center gap-2 pointer-events-auto">
+                    {clip.remote_path ? (
+                        <div
+                            className="flex items-center justify-center w-10 h-10 opacity-100 text-mocha-green cursor-pointer"
+                            title="Already uploaded"
+                            onClick={() =>
+                                writeText(clip.remote_path as string)
+                            }
+                        >
+                            <Cloud className="w-5 h-5" />
+                        </div>
+                    ) : (
+                        <>
+                            {isUploading && (
+                                <div className="flex items-center gap-1">
+                                    <div className="w-12 h-1 bg-mocha-surface0 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-mocha-mauve rounded-full transition-all"
+                                            style={{
+                                                width: `${uploadProgress}%`,
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            <div
+                                className="flex items-center justify-center w-10 h-10 opacity-100 hover:text-mocha-lavender cursor-pointer"
+                                onClick={() => {
+                                    if (clip.remote_path) return;
+                                    setIsUploading(true);
+                                    setUploadProgress(0);
+
+                                    invoke("upload_clip", { clip })
+                                        .then((res) => {
+                                            writeText(res as string);
+                                            setIsUploading(false);
+                                            setUploadProgress(0);
+                                            reloadClips();
+                                        })
+                                        .catch((err) => {
+                                            setIsUploading(false);
+                                            setUploadProgress(0);
+                                            alert(err);
+                                        });
+                                }}
+                            >
+                                <Cloud className="w-5 h-5" />
+                            </div>
+                        </>
+                    )}
                     <div
                         className="flex items-center justify-center w-10 h-10 opacity-100 hover:text-mocha-lavender cursor-pointer"
                         onClick={() =>

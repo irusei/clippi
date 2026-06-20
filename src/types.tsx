@@ -25,6 +25,7 @@ export interface VodClip {
     action_count: number[];
     date: string;
     integration_result: Result | null;
+    remote_path?: string | null;
 }
 
 export type BaseResult = {
@@ -48,6 +49,8 @@ export interface Settings {
     windows_autostart: boolean;
     bookmark_key: string;
     recording_enabled: boolean;
+    upload_endpoint?: string | null;
+    upload_token?: string | null;
 }
 
 export type BaseFilter = {

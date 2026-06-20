@@ -393,6 +393,48 @@ export default function SettingTab() {
                         )}
                     </div>
                 </section>
+
+                <section className="flex flex-col gap-4">
+                    <h3 className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">
+                        Zipline Uploader
+                    </h3>
+
+                    <div className="flex flex-col gap-4 px-1">
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-mocha-text">
+                                Endpoint
+                            </label>
+                            <Input
+                                type="text"
+                                className="flex-1"
+                                value={settings.upload_endpoint || ""}
+                                onChange={(value) =>
+                                    updateSetting(
+                                        "upload_endpoint",
+                                        value || undefined,
+                                    )
+                                }
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-mocha-text">
+                                Token
+                            </label>
+                            <Input
+                                type="password"
+                                className="flex-1"
+                                value={settings.upload_token || ""}
+                                onChange={(value) =>
+                                    updateSetting(
+                                        "upload_token",
+                                        value || undefined,
+                                    )
+                                }
+                            />
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     );

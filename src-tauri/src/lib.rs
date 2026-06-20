@@ -30,6 +30,7 @@ pub mod platform_utils;
 pub mod recorder;
 pub mod sound;
 pub mod storage;
+pub mod uploader;
 pub mod watcher;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -193,6 +194,11 @@ fn get_storage_info() -> StorageInfo {
     storage::storage_info::get_storage_info()
 }
 
+#[tauri::command]
+async fn upload_clip(clip: Clip, app: tauri::AppHandle) -> Result<String, String> {
+    storage::clips::upload_clip(app, clip).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     spawn(|| {
@@ -255,6 +261,7 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(tauri::generate_handler![
             get_clips,
             open_clip_in_explorer,
@@ -272,6 +279,7 @@ pub fn run() {
             get_game_preferences,
             set_game_preference,
             get_storage_info,
+            upload_clip,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
