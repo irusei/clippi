@@ -123,7 +123,11 @@ export default function Clip({ clip, onClick }: ClipProps) {
                     <div
                         className="flex items-center gap-1 text-xs text-mocha-green"
                         title="Already uploaded"
-                        onClick={() => writeText(clip.remote_path as string)}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            writeText(clip.remote_path as string);
+                        }}
                     >
                         <Cloud className="w-4 h-4" />
                         <span>Uploaded</span>
