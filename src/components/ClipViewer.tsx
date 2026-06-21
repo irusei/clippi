@@ -16,7 +16,7 @@ import {
     Cloud,
 } from "lucide-react";
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { formatTime, smooth } from "../utils";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import TimelineMarker from "./TimelineMarker";
@@ -36,16 +36,10 @@ import { getMarkerData } from "../integration/MarkerData";
 interface ClipViewerProps {
     clip: VodClip;
     onExitClip: () => void;
-    setSelectedClipToLastClip: () => void;
     reloadClips: () => void;
 }
 
-export default function ClipViewer({
-    clip,
-    onExitClip,
-    setSelectedClipToLastClip,
-    reloadClips,
-}: ClipViewerProps) {
+export default function ClipViewer({ clip, onExitClip, reloadClips }: ClipViewerProps) {
     const playerRef = useRef<HTMLVideoElement | null>(null);
     const timelineRef = useRef<HTMLDivElement | null>(null);
 
@@ -568,7 +562,7 @@ export default function ClipViewer({
                                     start: trimLeft,
                                     end: trimRight,
                                 }).then((res) => {
-                                    if (res) setSelectedClipToLastClip();
+                                    if (res) emit("show_trimmed_clip");
                                 });
                             }}
                         >

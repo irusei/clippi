@@ -7,10 +7,10 @@ import ClipViewer from "../components/ClipViewer";
 import { FilterMenu } from "../components/FilterMenu";
 import { filterClips } from "../utils/filterClips";
 import { FilterOptions } from "../types";
-import { platform } from "@tauri-apps/plugin-os";
 import { Select } from "../components/ui/Select";
 import { isOverStorageLimit } from "../utils";
 import { AlertCircle } from "lucide-react";
+import { platform } from "@tauri-apps/plugin-os";
 
 function getSortedUniqueGames(clips: VodClip[]): [DetectedGame, number][] {
     let sortedGames: Map<string, [DetectedGame, number]> = new Map();
@@ -43,15 +43,6 @@ export default function ClipTab() {
     const isStorageLimitReached =
         storageInfo &&
         isOverStorageLimit(storageInfo.clips_size, maxStorageLimit);
-
-    // runs on trim, sets clip to trim
-    function setSelectedClipToLastClip() {
-        invoke("get_clips").then((res) => {
-            let clips = res as VodClip[];
-            setClips(clips);
-            setSelectedClip(clips[0]);
-        });
-    }
 
     function _setSelectedClip(clip: VodClip) {
         if (platform() === "windows") setSelectedClip(clip);
@@ -107,10 +98,19 @@ export default function ClipTab() {
             setClips(event.payload as VodClip[]);
         });
 
+        const ul2 = listen("show_trimmed_clip", () => {
+            invoke("get_clips").then((res) => {
+                let clips = res as VodClip[];
+                setClips(clips);
+                setSelectedClip(clips[0]);
+            });
+        });
+
         getClips();
 
         return () => {
             ul1.then((ul) => ul());
+            ul2.then((ul) => ul());
         };
     }, []);
 
@@ -227,7 +227,6 @@ export default function ClipTab() {
                 <ClipViewer
                     clip={selectedClip}
                     onExitClip={() => setSelectedClip(null)}
-                    setSelectedClipToLastClip={setSelectedClipToLastClip}
                     reloadClips={getClips}
                 />
             )}
