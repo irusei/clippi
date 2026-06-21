@@ -137,6 +137,9 @@ pub fn store_clip(
     action_count: Vec<usize>,
     integration_result: Option<Box<dyn GameIntegrationResult>>,
 ) {
+    let clip_name = integration_result
+        .as_ref()
+        .and_then(|r| r.clip_name());
     // prepare move
     let clip_filename = clip_path.file_name().expect("Failed to get filename?");
     let mut new_path = get_clipping_folder();
@@ -174,7 +177,7 @@ pub fn store_clip(
             id: uuid::Uuid::new_v4(),
             clip_type: clip_type,
             path: clean_path(&new_path.to_string_lossy().to_string()),
-            title: format!("{} VOD", &game_data.name),
+            title: clip_name.unwrap_or_else(|| format!("{} VOD", &game_data.name)),
             duration: duration,
             game: game_data,
             size: file_size,

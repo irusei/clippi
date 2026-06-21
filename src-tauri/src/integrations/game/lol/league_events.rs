@@ -24,7 +24,43 @@ pub struct LeagueResult {
 }
 
 #[typetag::serde]
-impl GameIntegrationResult for LeagueResult {}
+impl GameIntegrationResult for LeagueResult {
+    fn clip_name(&self) -> Option<String> {
+        let data = &self.data;
+        let riot_id = &data.current_player_data.riot_id;
+
+        let my_player = data.players.iter().find(|p| p.riot_id == *riot_id)?;
+        let my_champion = my_player.champion_name.as_str();
+        let my_team = &my_player.team;
+        let my_position = &my_player.position;
+
+        let enemy_champion = data
+            .players
+            .iter()
+            .find(|p| p.team != *my_team && p.position == *my_position)
+            .map(|p| p.champion_name.as_str())
+            .unwrap_or("Unknown");
+
+        let result = data.game_events.events.iter().find_map(|e| match e {
+            crate::integrations::game::lol::league_struct::LeagueGameEvent::GameEnd {
+                result,
+                ..
+            } => Some(result),
+            _ => None,
+        });
+
+        let result_str = match result {
+            Some(crate::integrations::game::lol::league_struct::LeagueGameResult::Win) => "Win",
+            Some(crate::integrations::game::lol::league_struct::LeagueGameResult::Lose) => "Lose",
+            None => "VOD",
+        };
+
+        Some(format!(
+            "{} vs {} - {}",
+            my_champion, enemy_champion, result_str
+        ))
+    }
+}
 
 impl GameIntegration for LeagueGameIntegration {
     fn get_result(&self) -> Option<Box<dyn GameIntegrationResult>> {

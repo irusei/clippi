@@ -10,7 +10,9 @@ use crate::{
 };
 
 #[typetag::serde(tag = "type")]
-pub trait GameIntegrationResult: DynClone + Send {}
+pub trait GameIntegrationResult: DynClone + Send {
+    fn clip_name(&self) -> Option<String>;
+}
 pub trait GameIntegration {
     fn get_result(&self) -> Option<Box<dyn GameIntegrationResult>>;
     fn run(&mut self) {}
