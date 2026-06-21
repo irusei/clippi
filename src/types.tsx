@@ -25,7 +25,8 @@ export interface VodClip {
     action_count: number[];
     date: string;
     integration_result: Result | null;
-    remote_path?: string | null;
+    remote_path: string | null;
+    favorited: boolean;
 }
 
 export type BaseResult = {

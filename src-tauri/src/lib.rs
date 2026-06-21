@@ -199,6 +199,11 @@ async fn upload_clip(clip: Clip, app: tauri::AppHandle) -> Result<String, String
     storage::clips::upload_clip(app, clip).await
 }
 
+#[tauri::command]
+fn toggle_favorite(clip: Clip) {
+    storage::clips::toggle_favorite(clip);
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     spawn(|| {
@@ -268,6 +273,7 @@ pub fn run() {
             trim_clip,
             delete_clip,
             rename_clip,
+            toggle_favorite,
             get_settings,
             set_settings,
             get_games,

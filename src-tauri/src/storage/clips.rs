@@ -54,6 +54,8 @@ pub struct Clip {
     pub integration_result: Option<Box<dyn GameIntegrationResult>>,
     #[serde(default)]
     pub remote_path: Option<String>,
+    #[serde(default)]
+    pub favorited: bool,
 }
 
 static CLIPS: LazyLock<Mutex<Vec<Clip>>> = LazyLock::new(|| Mutex::new(load_from_file()));
@@ -182,6 +184,7 @@ pub fn store_clip(
             date: chrono::Local::now().format("%Y-%m-%d %H:%M").to_string(),
             integration_result: integration_result,
             remote_path: None,
+            favorited: false,
         });
     }
     save_to_file();
@@ -244,6 +247,7 @@ pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData, action_co
                 date: chrono::Local::now().format("%Y-%m-%d %H:%M").to_string(),
                 integration_result: None, // TODO: make this stay
                 remote_path: None,
+                favorited: false,
             });
         }
         save_to_file();
@@ -314,6 +318,19 @@ pub fn rename_clip(clip: Clip, new_title: String) {
         for c in clips.iter_mut() {
             if c.id == clip.id {
                 c.title = new_title;
+                break;
+            }
+        }
+    }
+    save_to_file();
+}
+
+pub fn toggle_favorite(clip: Clip) {
+    {
+        let mut clips = CLIPS.lock().unwrap();
+        for c in clips.iter_mut() {
+            if c.id == clip.id {
+                c.favorited = !c.favorited;
                 break;
             }
         }

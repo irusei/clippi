@@ -7,9 +7,14 @@ export function filterClips(
     clips: VodClip[],
     selectedGameName: string,
     filterOptions: FilterOptions,
+    favoritedOnly: boolean = false,
 ): VodClip[] {
     return clips.filter((clip) => {
         if (selectedGameName && clip.game.name !== selectedGameName) {
+            return false;
+        }
+
+        if (favoritedOnly && !clip.favorited) {
             return false;
         }
 

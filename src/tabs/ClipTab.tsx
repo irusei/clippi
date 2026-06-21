@@ -9,7 +9,7 @@ import { filterClips } from "../utils/filterClips";
 import { FilterOptions } from "../types";
 import { Select } from "../components/ui/Select";
 import { isOverStorageLimit } from "../utils";
-import { AlertCircle, Trash2 } from "lucide-react";
+import { AlertCircle, Trash2, Star } from "lucide-react";
 import { platform } from "@tauri-apps/plugin-os";
 import { confirm } from "@tauri-apps/plugin-dialog";
 
@@ -44,6 +44,7 @@ export default function ClipTab() {
     const [filterOptions, setFilterOptions] = useState<FilterOptions>({
         type: "",
     });
+    const [favoritedOnly, setFavoritedOnly] = useState(false);
     const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
     const [maxStorageLimit, setMaxStorageLimit] = useState<string>("unlimited");
 
@@ -175,7 +176,12 @@ export default function ClipTab() {
         };
     }, []);
 
-    const filteredClips = filterClips(clips, selectedGameName, filterOptions);
+    const filteredClips = filterClips(
+        clips,
+        selectedGameName,
+        filterOptions,
+        favoritedOnly,
+    );
 
     return (
         <div className="bg-mocha-mantle w-full h-full">
@@ -251,6 +257,19 @@ export default function ClipTab() {
                                 setFilterOptions={setFilterOptions}
                                 clips={clips}
                             />
+                            <button
+                                className={`flex items-center gap-1 px-3 py-2 text-sm rounded-lg font-medium transition-colors ${
+                                    favoritedOnly
+                                        ? "bg-mocha-yellow/20 text-mocha-yellow"
+                                        : "text-mocha-overlay2 hover:bg-mocha-surface0"
+                                }`}
+                                onClick={() => setFavoritedOnly(!favoritedOnly)}
+                            >
+                                <Star
+                                    className={`w-4 h-4 ${favoritedOnly ? "fill-mocha-yellow" : ""}`}
+                                />
+                                <p>Favorited</p>
+                            </button>
                         </div>
 
                         {isStorageLimitReached && (

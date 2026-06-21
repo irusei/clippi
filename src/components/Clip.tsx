@@ -1,4 +1,4 @@
-import { Play, Pencil, Trash, Cloud } from "lucide-react";
+import { Play, Pencil, Trash, Cloud, Star } from "lucide-react";
 import { VodClip } from "../types";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { formatTime, formatBytes } from "../utils";
@@ -37,7 +37,7 @@ export default function Clip({ clip, onSelect, isSelected }: ClipProps) {
             ? getGameResult(clip.integration_result) === "Win"
                 ? "bg-mocha-green"
                 : "bg-mocha-red"
-            : undefined;  
+            : undefined;
 
     return (
         <div
@@ -132,7 +132,23 @@ export default function Clip({ clip, onSelect, isSelected }: ClipProps) {
                     />
                 )}
             </div>
-            <div className="flex-1 justify-end flex flex-row p-4 items-center">
+            <div className="flex-1 justify-end flex flex-row p-4 items-center gap-2">
+                <div
+                    className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-mocha-surface0 cursor-pointer"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        invoke("toggle_favorite", { clip });
+                    }}
+                >
+                    <Star
+                        className={`w-5 h-5 ${
+                            clip.favorited
+                                ? "fill-mocha-yellow text-mocha-yellow"
+                                : "text-mocha-text"
+                        }`}
+                    />
+                </div>
                 {clip.remote_path ? (
                     <div
                         className="flex items-center gap-1 text-xs text-mocha-green"
