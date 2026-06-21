@@ -7,6 +7,7 @@ import { listen } from "@tauri-apps/api/event";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import Input from "./ui/Input";
 import LeagueClipCard from "./integration/league/LeagueClipCard";
+import { getGameResult } from "../integration/league/LeagueUtils";
 import { confirm } from "@tauri-apps/plugin-dialog";
 
 interface ClipProps {
@@ -31,15 +32,23 @@ export default function Clip({ clip, onSelect, isSelected }: ClipProps) {
         };
     }, []);
 
+    let stripColor =
+        clip.integration_result?.type === "LeagueResult"
+            ? getGameResult(clip.integration_result) === "Win"
+                ? "bg-mocha-green"
+                : "bg-mocha-red"
+            : undefined;  
+
     return (
         <div
-            className={`flex flex-row w-full h-24 rounded-md bg-mocha-base overflow-hidden hover:cursor-pointer gap-x-4 transition-colors ${
+            className={`flex flex-row w-full h-24 rounded-md bg-mocha-base overflow-hidden hover:cursor-pointer transition-colors ${
                 isSelected
                     ? "border-2 border-mocha-mauve"
                     : "border-2 border-mocha-base"
             }`}
             onClick={onSelect}
         >
+            {stripColor && <div className={`w-1 ${stripColor} shrink-0`}></div>}
             <div className="flex flex-row max-w-1/3 min-w-1/3 gap-x-2">
                 <div className="relative w-40 h-full bg-mocha-mantle flex items-center justify-center shrink-0">
                     <img
