@@ -9,7 +9,7 @@ import { filterClips } from "../utils/filterClips";
 import { FilterOptions } from "../types";
 import { Select } from "../components/ui/Select";
 import { isOverStorageLimit } from "../utils";
-import { AlertCircle, Trash2, Star } from "lucide-react";
+import { AlertCircle, Trash2, Star, X } from "lucide-react";
 import { platform } from "@tauri-apps/plugin-os";
 import { confirm } from "@tauri-apps/plugin-dialog";
 
@@ -295,13 +295,25 @@ export default function ClipTab() {
                                     {selectedClipIds.size !== 1 ? "s" : ""}{" "}
                                     selected
                                 </p>
-                                <button
-                                    className="flex items-center gap-2 px-3 py-2 text-sm text-mocha-red hover:bg-mocha-red/10 transition-colors rounded-lg font-medium"
-                                    onClick={handleDeleteSelected}
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    Delete
-                                </button>
+                                <div className="flex flex-row">
+                                    <button
+                                        className="flex items-center gap-2 px-3 py-2 text-sm text-mocha-overlay2 hover:bg-mocha-overlay2/10 transition-colors rounded-lg font-medium"
+                                        onClick={() => {
+                                            setSelectedClipIds(new Set());
+                                            setLastSelectedClipId(null);
+                                        }}
+                                    >
+                                        <X className="w-4 h-4" />
+                                        Deselect all
+                                    </button>
+                                    <button
+                                        className="flex items-center gap-2 px-3 py-2 text-sm text-mocha-red hover:bg-mocha-red/10 transition-colors rounded-lg font-medium"
+                                        onClick={handleDeleteSelected}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        Delete
+                                    </button>
+                                </div>
                             </div>
                         )}
 
