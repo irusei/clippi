@@ -9,8 +9,9 @@ import { filterClips } from "../utils/filterClips";
 import { FilterOptions } from "../types";
 import { Select } from "../components/ui/Select";
 import { isOverStorageLimit } from "../utils";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Trash2 } from "lucide-react";
 import { platform } from "@tauri-apps/plugin-os";
+import { confirm } from "@tauri-apps/plugin-dialog";
 
 function getSortedUniqueGames(clips: VodClip[]): [DetectedGame, number][] {
     let sortedGames: Map<string, [DetectedGame, number]> = new Map();
@@ -30,6 +31,12 @@ function getSortedUniqueGames(clips: VodClip[]): [DetectedGame, number][] {
 export default function ClipTab() {
     const [clips, setClips] = useState<VodClip[]>([]);
     const [selectedClip, setSelectedClip] = useState<VodClip | null>(null);
+    const [selectedClipIds, setSelectedClipIds] = useState<Set<string>>(
+        new Set(),
+    );
+    const [lastSelectedClipId, setLastSelectedClipId] = useState<string | null>(
+        null,
+    );
     const [uniqueGames, setUniqueGames] = useState<[DetectedGame, number][]>(
         [],
     );
@@ -63,6 +70,60 @@ export default function ClipTab() {
                 }
             }
         });
+    }
+
+    function handleClipClick(
+        clip: VodClip,
+        event: React.MouseEvent,
+        index: number,
+    ) {
+        const filteredClips = filterClips(
+            clips,
+            selectedGameName,
+            filterOptions,
+        );
+
+        if (event.shiftKey && lastSelectedClipId != null) {
+            const lastIdx = filteredClips.findIndex(
+                (c) => c.id === lastSelectedClipId,
+            );
+            if (lastIdx !== -1) {
+                const start = Math.min(lastIdx, index);
+                const end = Math.max(lastIdx, index);
+                const newSelected = new Set(selectedClipIds);
+                for (let i = start; i <= end; i++) {
+                    newSelected.add(filteredClips[i].id);
+                }
+                setSelectedClipIds(newSelected);
+            }
+        } else if (event.ctrlKey) {
+            const newSelected = new Set(selectedClipIds);
+            if (newSelected.has(clip.id)) {
+                newSelected.delete(clip.id);
+            } else {
+                newSelected.add(clip.id);
+            }
+            setSelectedClipIds(newSelected);
+            setLastSelectedClipId(clip.id);
+        } else {
+            _setSelectedClip(clip);
+        }
+    }
+
+    async function handleDeleteSelected() {
+        const confirmed = await confirm(
+            `Delete ${selectedClipIds.size} clip${selectedClipIds.size > 1 ? "s" : ""}?`,
+        );
+        if (!confirmed) return;
+
+        for (const clipId of selectedClipIds) {
+            const clip = clips.find((c) => c.id === clipId);
+            if (clip) {
+                await invoke("delete_clip", { clip });
+            }
+        }
+
+        setSelectedClipIds(new Set());
     }
 
     // set and update unique games for filtering
@@ -113,6 +174,8 @@ export default function ClipTab() {
             ul2.then((ul) => ul());
         };
     }, []);
+
+    const filteredClips = filterClips(clips, selectedGameName, filterOptions);
 
     return (
         <div className="bg-mocha-mantle w-full h-full">
@@ -206,16 +269,32 @@ export default function ClipTab() {
                             </div>
                         )}
 
+                        {selectedClipIds.size > 0 && (
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm text-mocha-overlay1 py-2 font-medium">
+                                    {selectedClipIds.size} clip
+                                    {selectedClipIds.size !== 1 ? "s" : ""}{" "}
+                                    selected
+                                </p>
+                                <button
+                                    className="flex items-center gap-2 px-3 py-2 text-sm text-mocha-red hover:bg-mocha-red/10 transition-colors rounded-lg font-medium"
+                                    onClick={handleDeleteSelected}
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete
+                                </button>
+                            </div>
+                        )}
+
                         <div className={"flex flex-col gap-3"}>
-                            {filterClips(
-                                clips,
-                                selectedGameName,
-                                filterOptions,
-                            ).map((clip) => (
+                            {filteredClips.map((clip, index) => (
                                 <Clip
                                     key={clip.id}
                                     clip={clip}
-                                    onClick={() => _setSelectedClip(clip)}
+                                    isSelected={selectedClipIds.has(clip.id)}
+                                    onSelect={(e) =>
+                                        handleClipClick(clip, e, index)
+                                    }
                                 />
                             ))}
                         </div>

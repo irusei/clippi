@@ -11,10 +11,11 @@ import { confirm } from "@tauri-apps/plugin-dialog";
 
 interface ClipProps {
     clip: VodClip;
-    onClick: () => void;
+    onSelect: (e: React.MouseEvent) => void;
+    isSelected: boolean;
 }
 
-export default function Clip({ clip, onClick }: ClipProps) {
+export default function Clip({ clip, onSelect, isSelected }: ClipProps) {
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [titleInput, setTitleInput] = useState(clip.title);
     const [isUploading, setIsUploading] = useState(false);
@@ -32,8 +33,12 @@ export default function Clip({ clip, onClick }: ClipProps) {
 
     return (
         <div
-            className="flex flex-row w-full h-24 rounded-md bg-mocha-base border-2 border-mocha-base overflow-hidden hover:cursor-pointer gap-x-4"
-            onClick={onClick}
+            className={`flex flex-row w-full h-24 rounded-md bg-mocha-base overflow-hidden hover:cursor-pointer gap-x-4 transition-colors ${
+                isSelected
+                    ? "border-2 border-mocha-mauve"
+                    : "border-2 border-mocha-base"
+            }`}
+            onClick={onSelect}
         >
             <div className="flex flex-row max-w-1/3 min-w-1/3 gap-x-2">
                 <div className="relative w-40 h-full bg-mocha-mantle flex items-center justify-center shrink-0">
@@ -118,7 +123,7 @@ export default function Clip({ clip, onClick }: ClipProps) {
                     />
                 )}
             </div>
-            <div className="flex-1 justify-end flex flex-row p-6 items-center gap-3">
+            <div className="flex-1 justify-end flex flex-row p-4 items-center">
                 {clip.remote_path ? (
                     <div
                         className="flex items-center gap-1 text-xs text-mocha-green"
@@ -144,8 +149,8 @@ export default function Clip({ clip, onClick }: ClipProps) {
                                 </div>
                             </div>
                         )}
-                        <Cloud
-                            className="text-mocha-text hover:text-mocha-mauve w-4 h-4 cursor-pointer"
+                        <div
+                            className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-mocha-surface0 cursor-pointer"
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -165,11 +170,13 @@ export default function Clip({ clip, onClick }: ClipProps) {
                                         alert(err);
                                     });
                             }}
-                        />
+                        >
+                            <Cloud className="w-5 h-5 text-mocha-text" />
+                        </div>
                     </>
                 )}
-                <Trash
-                    className="text-mocha-red w-4 h-4"
+                <div
+                    className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-mocha-surface0 cursor-pointer"
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -180,7 +187,9 @@ export default function Clip({ clip, onClick }: ClipProps) {
                             if (result) invoke("delete_clip", { clip: clip });
                         });
                     }}
-                />
+                >
+                    <Trash className="w-5 h-5 text-mocha-red hover:text-mocha-red/80" />
+                </div>
             </div>
         </div>
     );
