@@ -6,6 +6,7 @@ import Input from "../components/ui/Input";
 import ProcessPicker from "../components/ProcessPicker";
 import { Plus, Save, Search, Trash } from "lucide-react";
 import { SettingsContainer } from "../components/ui/SettingsContainer";
+import { clamp } from "../utils";
 import { platform } from "@tauri-apps/plugin-os";
 
 interface GameProps {
@@ -448,8 +449,12 @@ export default function GameTab() {
                                                             updatePreferenceField(
                                                                 "resolution_x_override",
                                                                 value
-                                                                    ? parseInt(
-                                                                          value,
+                                                                    ? clamp(
+                                                                          parseInt(
+                                                                              value,
+                                                                          ),
+                                                                          1,
+                                                                          8192,
                                                                       )
                                                                     : null,
                                                             );
@@ -471,8 +476,12 @@ export default function GameTab() {
                                                             updatePreferenceField(
                                                                 "resolution_y_override",
                                                                 value
-                                                                    ? parseInt(
-                                                                          value,
+                                                                    ? clamp(
+                                                                          parseInt(
+                                                                              value,
+                                                                          ),
+                                                                          1,
+                                                                          8192,
                                                                       )
                                                                     : null,
                                                             );

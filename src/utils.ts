@@ -36,3 +36,7 @@ export function isOverStorageLimit(usedBytes: number, limit: string): boolean {
     const limitBytes = parseStorageLimit(limit);
     return usedBytes >= limitBytes!;
 }
+
+export function clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value));
+}
