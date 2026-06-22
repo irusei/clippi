@@ -198,7 +198,7 @@ export default function ClipTab() {
                         </label>
                         <div className="flex flex-row gap-x-3 items-center w-full">
                             <Select
-                                className="w-1/4"
+                                className="w-1/4 bg-mocha-base"
                                 value={selectedGameName}
                                 placeholderValue={"Filter games..."}
                                 selectedLabel={

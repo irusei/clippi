@@ -96,12 +96,12 @@ export function Select({
 
     return (
         <div
-            className={clsx("relative transition-all", className)}
+            className={clsx("relative transition-all rounded-lg", className)}
             ref={containerRef}
         >
             <div
                 className={clsx(
-                    "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-mocha-base cursor-pointer transition-all",
+                    "w-full flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all",
                     disabled
                         ? "opacity-50 pointer-events-none outline-none"
                         : "hover:border-mocha-mauve focus-within:ring-1 focus-within:ring-mocha-mauve/50",

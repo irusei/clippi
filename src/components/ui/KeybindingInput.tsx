@@ -80,10 +80,10 @@ export function KeybindingInput({ value, onChange }: KeybindingInputProps) {
     return (
         <div
             className={clsx(
-                "w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-mocha-base cursor-pointer transition-all border max-w-xs",
+                "w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-mocha-mantle cursor-pointer transition-all border max-w-xs",
                 listening
                     ? "border-mocha-mauve ring-1 ring-mocha-mauve/50"
-                    : "border-mocha-mauve/10 hover:border-mocha-mauve",
+                    : "border-transparent",
             )}
             onClick={() => {
                 setListening(true);

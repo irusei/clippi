@@ -108,6 +108,7 @@ export default function SettingTab() {
                                 Resolution
                             </label>
                             <Select
+                                className="bg-mocha-base"
                                 value={getResolution() ?? ""}
                                 onChange={(value) => setResolution(value)}
                                 options={[
@@ -123,6 +124,7 @@ export default function SettingTab() {
                                 Framerate
                             </label>
                             <Select
+                                className="bg-mocha-base"
                                 value={settings.framerate.toString()}
                                 onChange={(value) =>
                                     updateSetting("framerate", parseInt(value))
@@ -155,7 +157,7 @@ export default function SettingTab() {
                                 Codec
                             </label>
                             <Select
-                                className=""
+                                className="bg-mocha-base"
                                 value={settings.encoder}
                                 onChange={(value) =>
                                     updateSetting("encoder", value)
@@ -177,35 +179,6 @@ export default function SettingTab() {
                     </h3>
 
                     <div className="flex flex-col gap-4 px-1">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-mocha-text">
-                                Save Location
-                            </label>
-                            <div className="flex gap-4 justify-center items-center">
-                                <Input
-                                    type={"text"}
-                                    className={"flex-1"}
-                                    value={newClipPath}
-                                    onBlur={() => {
-                                        updateSetting("clip_path", newClipPath);
-                                    }}
-                                    onChange={(value) => setNewClipPath(value)}
-                                />
-                                <Folder
-                                    className="text-mocha-mauve cursor-pointer w-5 h-5"
-                                    onClick={() => {
-                                        open({
-                                            multiple: false,
-                                            directory: true,
-                                        }).then((folder) => {
-                                            if (folder != null)
-                                                setNewClipPath(folder);
-                                        });
-                                    }}
-                                />
-                            </div>
-                        </div>
-
                         {storageInfo && (
                             <div className="flex flex-col gap-2">
                                 <div className="flex items-center gap-3 text-sm text-mocha-text">
@@ -283,11 +256,41 @@ export default function SettingTab() {
                             </div>
                         )}
 
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-mocha-text">
-                                Max Storage Limit
-                            </label>
+                        <SettingsContainer
+                            title="Save Location"
+                            description="Where your clips are saved"
+                        >
+                            <div className="w-1/4 flex gap-4 items-center pr-2">
+                                <Input
+                                    type={"text"}
+                                    className={"flex-1 bg-mocha-mantle"}
+                                    value={newClipPath}
+                                    onBlur={() => {
+                                        updateSetting("clip_path", newClipPath);
+                                    }}
+                                    onChange={(value) => setNewClipPath(value)}
+                                />
+                                <Folder
+                                    className="text-mocha-mauve cursor-pointer w-5 h-5"
+                                    onClick={() => {
+                                        open({
+                                            multiple: false,
+                                            directory: true,
+                                        }).then((folder) => {
+                                            if (folder != null)
+                                                setNewClipPath(folder);
+                                        });
+                                    }}
+                                />
+                            </div>
+                        </SettingsContainer>
+
+                        <SettingsContainer
+                            title="Max Storage Limit"
+                            description="Maximum storage for clips"
+                        >
                             <Select
+                                className="bg-mocha-mantle"
                                 value={settings.max_storage_limit}
                                 onChange={(value) =>
                                     updateSetting("max_storage_limit", value)
@@ -301,7 +304,7 @@ export default function SettingTab() {
                                     ["Unlimited", "Unlimited"],
                                 ]}
                             />
-                        </div>
+                        </SettingsContainer>
                     </div>
                 </section>
 
@@ -420,14 +423,14 @@ export default function SettingTab() {
                         Zipline Uploader
                     </h3>
 
-                    <div className="flex flex-col gap-4 px-1">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-mocha-text">
-                                Endpoint
-                            </label>
+                    <div className="flex flex-col gap-3 px-1">
+                        <SettingsContainer
+                            title="Endpoint"
+                            description="Your Zipline endpoint URL"
+                        >
                             <Input
                                 type="text"
-                                className="flex-1"
+                                className="w-1/4 bg-mocha-mantle"
                                 value={settings.upload_endpoint || ""}
                                 onChange={(value) =>
                                     updateSetting(
@@ -436,15 +439,15 @@ export default function SettingTab() {
                                     )
                                 }
                             />
-                        </div>
+                        </SettingsContainer>
 
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-mocha-text">
-                                Token
-                            </label>
+                        <SettingsContainer
+                            title="Token"
+                            description="Your Zipline token"
+                        >
                             <Input
                                 type="password"
-                                className="flex-1"
+                                className="w-1/4 bg-mocha-mantle"
                                 value={settings.upload_token || ""}
                                 onChange={(value) =>
                                     updateSetting(
@@ -453,7 +456,7 @@ export default function SettingTab() {
                                     )
                                 }
                             />
-                        </div>
+                        </SettingsContainer>
                     </div>
                 </section>
             </div>

@@ -120,88 +120,80 @@ export function FilterMenu({
         return (
             <>
                 <Select
-                    className="w-1/4"
+                    className="w-1/4 bg-mocha-base"
                     value={champion}
                     placeholderValue={"Filter by champion..."}
-                        selectedLabel={
-                            champion
-                                ? (() => {
-                                      const entry = championEntries.find(
-                                          (c) => c.name === champion,
-                                      );
-                                      return entry ? (
-                                          <>
-                                              <img
-                                                  className="w-5 h-5"
-                                                  src={entry.image}
-                                                  alt={entry.name}
-                                              />
-                                              <p className="text-mocha-text truncate">
-                                                  {entry.name}
-                                              </p>
-                                          </>
-                                      ) : null;
-                                  })()
-                                : undefined
-                        }
-                        onChange={(val) =>
-                            setFilterOptions({
-                                ...leagueFilter,
-                                championName:
-                                    champion === val ? undefined : val,
-                            })
-                        }
-                    >
-                        {championEntries.map(({ name, image, count }) => [
-                            name,
-                            <div className="flex flex-row items-center space-x-2">
-                                <img
-                                    className="w-5 h-5"
-                                    src={image}
-                                    alt={name}
-                                />
-                                <p className="text-mocha-text truncate">
-                                    {name}
-                                </p>
-                                <p className="text-mocha-overlay2">{count}</p>
-                            </div>,
-                        ])}
-                    </Select>
-
-                <Select
-                    className="w-1/5"
-                    value={position}
-                    placeholderValue={"Filter by position..."}
-                        selectedLabel={
-                            position
-                                ? (() => {
-                                      const entry = positionEntries.find(
-                                          (p) => p.raw === position,
-                                      );
-                                      return entry ? (
-                                          <p className="text-mocha-text">
+                    selectedLabel={
+                        champion
+                            ? (() => {
+                                  const entry = championEntries.find(
+                                      (c) => c.name === champion,
+                                  );
+                                  return entry ? (
+                                      <>
+                                          <img
+                                              className="w-5 h-5"
+                                              src={entry.image}
+                                              alt={entry.name}
+                                          />
+                                          <p className="text-mocha-text truncate">
                                               {entry.name}
                                           </p>
-                                      ) : null;
-                                  })()
-                                : undefined
-                        }
-                        onChange={(val) =>
-                            setFilterOptions({
-                                ...leagueFilter,
-                                positionName:
-                                    position === val ? undefined : val,
-                            })
-                        }
-                    >
-                        {positionEntries.map(({ raw, name, count }) => [
-                            raw,
-                            <div className="flex flex-row items-center space-x-2">
-                                <p className="text-mocha-text">{name}</p>
-                                <p className="text-mocha-overlay2">{count}</p>
-                            </div>,
-                        ])}
-                    </Select>
+                                      </>
+                                  ) : null;
+                              })()
+                            : undefined
+                    }
+                    onChange={(val) =>
+                        setFilterOptions({
+                            ...leagueFilter,
+                            championName: champion === val ? undefined : val,
+                        })
+                    }
+                >
+                    {championEntries.map(({ name, image, count }) => [
+                        name,
+                        <div className="flex flex-row items-center space-x-2">
+                            <img className="w-5 h-5" src={image} alt={name} />
+                            <p className="text-mocha-text truncate">{name}</p>
+                            <p className="text-mocha-overlay2">{count}</p>
+                        </div>,
+                    ])}
+                </Select>
+
+                <Select
+                    className="w-1/5 bg-mocha-base"
+                    value={position}
+                    placeholderValue={"Filter by position..."}
+                    selectedLabel={
+                        position
+                            ? (() => {
+                                  const entry = positionEntries.find(
+                                      (p) => p.raw === position,
+                                  );
+                                  return entry ? (
+                                      <p className="text-mocha-text">
+                                          {entry.name}
+                                      </p>
+                                  ) : null;
+                              })()
+                            : undefined
+                    }
+                    onChange={(val) =>
+                        setFilterOptions({
+                            ...leagueFilter,
+                            positionName: position === val ? undefined : val,
+                        })
+                    }
+                >
+                    {positionEntries.map(({ raw, name, count }) => [
+                        raw,
+                        <div className="flex flex-row items-center space-x-2">
+                            <p className="text-mocha-text">{name}</p>
+                            <p className="text-mocha-overlay2">{count}</p>
+                        </div>,
+                    ])}
+                </Select>
             </>
         );
     }
