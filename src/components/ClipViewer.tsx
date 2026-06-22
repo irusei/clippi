@@ -226,7 +226,7 @@ export default function ClipViewer({
                             className="flex items-center gap-2 cursor-pointer group"
                             onClick={() => setIsEditingTitle(true)}
                         >
-                            <p className="font-medium">{clip.title}</p>
+                            <p className="font-medium">{titleInput}</p>
                             <Pencil className="w-3.5 h-3.5 opacity-0 group-hover:opacity-50 transition-opacity" />
                         </div>
                     )}
