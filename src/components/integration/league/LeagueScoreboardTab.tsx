@@ -7,12 +7,12 @@ import {
     getImageFromSpellName,
     getSelf,
     getPositionName,
-} from "../../integration/league/LeagueUtils";
+} from "../../../integration/league/LeagueUtils";
 import {
     LeagueResult,
     LeaguePlayer,
-} from "../../integration/league/LeagueTypes";
-import { formatTime } from "../../utils";
+} from "../../../integration/league/LeagueTypes";
+import { formatTime } from "../../../utils";
 
 function groupPlayersByTeam(
     players: LeaguePlayer[],
@@ -57,7 +57,7 @@ function ChampionIcon({
 
     return (
         <img
-            className="w-6 h-6 rounded-md bg-mocha-surface0 border border-mocha-crust object-cover"
+            className="w-8 h-8 rounded-md bg-mocha-surface0 border border-mocha-crust object-cover"
             src={src || ""}
             alt={championName}
             title={title}
@@ -226,7 +226,11 @@ function TeamPanel({
     );
 }
 
-export default function ScoreboardTab({ result }: { result: LeagueResult }) {
+export default function LeagueScoreboardTab({
+    result,
+}: {
+    result: LeagueResult;
+}) {
     const [gameTime] = useState(result.data.game_stats.gameTime);
     const self = getSelf(result);
     const gameResult = getGameResult(result);

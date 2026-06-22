@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { VodClip } from "../types";
 import BookmarksTab from "./BookmarksTab";
-import ScoreboardTab from "./integration/ScoreboardTab";
+import LeagueScoreboardTab from "./integration/league/LeagueScoreboardTab";
 import { LeagueResult } from "../integration/league/LeagueTypes";
 
 interface RightPanelProps {
@@ -56,7 +56,7 @@ export default function RightPanel({ clip, onSeek, onClose }: RightPanelProps) {
                     )}
                     {activeTab === "scoreboard" &&
                         clip.integration_result?.type === "LeagueResult" && (
-                            <ScoreboardTab
+                            <LeagueScoreboardTab
                                 result={clip.integration_result as LeagueResult}
                             />
                         )}
