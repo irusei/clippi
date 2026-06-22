@@ -46,16 +46,6 @@ pub fn start_integration(game: &DetectedGameData) {
 }
 
 pub fn stop_integration() -> Option<Box<dyn GameIntegrationResult>> {
-    let mut current_integration = CURRENT_GAME_INTEGRATION.lock().unwrap();
-
-    if current_integration.is_some() {
-        let result = current_integration
-            .as_mut()
-            .map(|integration| integration.get_result())
-            .unwrap();
-
-        return result;
-    }
-
-    return None;
+    let current_integration = CURRENT_GAME_INTEGRATION.lock().unwrap().take();
+    current_integration.and_then(|i| i.get_result())
 }
