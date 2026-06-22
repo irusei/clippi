@@ -44,6 +44,7 @@ pub enum VodEncoder {
 #[derive(Debug, Clone)]
 pub struct RecordingSettings {
     pub resolution: (u32, u32),
+    pub game_resolution: Option<(u32, u32)>,
     pub framerate: u32,
     pub bitrate: u32,
     pub folder: PathBuf,
@@ -193,9 +194,18 @@ pub fn record(
 
     let output_path = full_path.to_string_lossy().to_string();
 
+    let base_width = settings
+        .game_resolution
+        .map(|r| r.0)
+        .unwrap_or(settings.resolution.0);
+    let base_height = settings
+        .game_resolution
+        .map(|r| r.1)
+        .unwrap_or(settings.resolution.1);
+
     let video_info = ObsVideoInfoBuilder::new()
-        .base_width(settings.resolution.0)
-        .base_height(settings.resolution.1)
+        .base_width(base_width)
+        .base_height(base_height)
         .output_width(settings.resolution.0)
         .output_height(settings.resolution.1)
         .fps_num(settings.framerate)

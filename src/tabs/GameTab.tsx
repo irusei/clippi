@@ -1,31 +1,20 @@
 import { useEffect, useState } from "react";
-import { DetectedGame } from "../types";
+import { DetectedGame, GamePreference } from "../types";
 import { invoke } from "@tauri-apps/api/core";
 import { Switch } from "../components/ui/Switch";
 import Input from "../components/ui/Input";
 import ProcessPicker from "../components/ProcessPicker";
 import { Plus, Save, Search, Trash } from "lucide-react";
 import { SettingsContainer } from "../components/ui/SettingsContainer";
-
-interface GamePreference {
-    enabled: boolean;
-}
+import { platform } from "@tauri-apps/plugin-os";
 
 interface GameProps {
     game: DetectedGame;
     selected: boolean;
     onClick: () => void;
-    preferences: GamePreference | undefined;
-    onToggle: (name: string, enabled: boolean) => void;
 }
 
-export function GameView({
-    game,
-    onClick,
-    selected,
-    preferences,
-    onToggle,
-}: GameProps) {
+export function GameView({ game, onClick, selected }: GameProps) {
     return (
         <div
             className={`flex flex-row items-center gap-x-4 px-2 py-2 bg-mocha-base border-mocha-base border rounded-sm text-mocha-text ${selected ? "border-mocha-mauve bg-mocha-mauve/20" : ""} hover:border-mocha-mauve transition-all hover:cursor-pointer`}
@@ -33,10 +22,6 @@ export function GameView({
         >
             <img className="w-8 h-8" src={game.icon ?? ""} />
             <p className="truncate text-md flex-1">{game.name}</p>
-            <Switch
-                checked={preferences?.enabled ?? true}
-                onChecked={(value) => onToggle(game.name, value)}
-            />
         </div>
     );
 }
@@ -45,9 +30,9 @@ export default function GameTab() {
     let [chosenGame, setChosenGame] = useState<DetectedGame | null>(null);
     let [modifiedGame, setModifiedGame] = useState<DetectedGame | null>(null);
     let [searchQuery, setSearchQuery] = useState<string>("");
-    let [gamePreferences, setGamePreferences] = useState<
-        Record<string, GamePreference>
-    >({});
+    let [gamePreferences, setGamePreferences] = useState<GamePreference | null>(
+        null,
+    );
 
     function getGames() {
         invoke("get_games").then((games) => {
@@ -56,24 +41,22 @@ export default function GameTab() {
     }
 
     function getPreferences() {
-        invoke("get_game_preferences").then((prefs) => {
-            setGamePreferences(prefs as Record<string, GamePreference>);
-        });
-    }
-
-    function toggleGameEnabled(gameName: string, enabled: boolean) {
-        invoke("set_game_preference", { gameName, enabled });
-        setGamePreferences((prev) => ({
-            ...prev,
-            [gameName]: {
-                ...prev[gameName],
-                enabled,
+        if (chosenGame == null) return;
+        invoke("get_game_preference", { gameName: chosenGame!.name }).then(
+            (prefs) => {
+                setGamePreferences(prefs as GamePreference);
             },
-        }));
+        );
     }
 
     function editGame() {
         invoke("edit_game", { oldGame: chosenGame, newGame: modifiedGame });
+        if (gamePreferences != null)
+            invoke("set_game_preference", {
+                gameName: modifiedGame!.name,
+                preferences: gamePreferences,
+            });
+
         setChosenGame(modifiedGame);
         getGames();
     }
@@ -89,10 +72,17 @@ export default function GameTab() {
         setModifiedGame({ ...modifiedGame, [key]: value });
     };
 
+    const updatePreferenceField = (key: keyof GamePreference, value: any) => {
+        if (!gamePreferences) return;
+        setGamePreferences({ ...gamePreferences, [key]: value });
+    };
+
     useEffect(() => {
         getGames();
-        getPreferences();
     }, []);
+
+    // update preferences
+    useEffect(getPreferences, [chosenGame]);
 
     return (
         <div className="bg-mocha-mantle w-full h-screen">
@@ -165,8 +155,6 @@ export default function GameTab() {
                                             chosenGame != null &&
                                             chosenGame == game
                                         }
-                                        preferences={gamePreferences[game.name]}
-                                        onToggle={toggleGameEnabled}
                                         onClick={() => {
                                             setChosenGame(game);
                                             setModifiedGame(game);
@@ -419,6 +407,83 @@ export default function GameTab() {
                                     />
                                 </SettingsContainer>
                             </section>
+
+                            {gamePreferences && (
+                                <section className="flex flex-col gap-4">
+                                    <h3 className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">
+                                        PERSONAL SETTINGS
+                                    </h3>
+
+                                    <div className="flex flex-col gap-3 px-1">
+                                        <SettingsContainer
+                                            title="Enable"
+                                            description="Enable recording for this game"
+                                        >
+                                            <Switch
+                                                checked={
+                                                    gamePreferences.enabled
+                                                }
+                                                onChecked={(value) =>
+                                                    updatePreferenceField(
+                                                        "enabled",
+                                                        value,
+                                                    )
+                                                }
+                                            />
+                                        </SettingsContainer>
+
+                                        {platform() === "windows" && (
+                                            <>
+                                                <SettingsContainer
+                                                    title="Width Override"
+                                                    description="Override width resolution for this game"
+                                                >
+                                                    <Input
+                                                        type="number"
+                                                        className="bg-mocha-mantle w-1/2"
+                                                        value={
+                                                            gamePreferences.resolution_x_override
+                                                        }
+                                                        onChange={(value) => {
+                                                            updatePreferenceField(
+                                                                "resolution_x_override",
+                                                                value
+                                                                    ? parseInt(
+                                                                          value,
+                                                                      )
+                                                                    : null,
+                                                            );
+                                                        }}
+                                                    />
+                                                </SettingsContainer>
+
+                                                <SettingsContainer
+                                                    title="Height Override"
+                                                    description="Override height resolution for this game"
+                                                >
+                                                    <Input
+                                                        type="number"
+                                                        className="bg-mocha-mantle w-1/2"
+                                                        value={
+                                                            gamePreferences.resolution_y_override
+                                                        }
+                                                        onChange={(value) => {
+                                                            updatePreferenceField(
+                                                                "resolution_y_override",
+                                                                value
+                                                                    ? parseInt(
+                                                                          value,
+                                                                      )
+                                                                    : null,
+                                                            );
+                                                        }}
+                                                    />
+                                                </SettingsContainer>
+                                            </>
+                                        )}
+                                    </div>
+                                </section>
+                            )}
                         </div>
                     )}
                 </div>

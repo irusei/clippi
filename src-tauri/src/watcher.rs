@@ -27,7 +27,7 @@ use crate::{
     storage::{
         self,
         clips::{store_clip, Bookmark},
-        game_preferences,
+        game_preferences::{self},
         games::DetectedGameData,
         settings::{get_clipping_folder, get_settings},
         storage_info,
@@ -209,7 +209,8 @@ pub fn handle_process(proc: Process) {
             }
 
             // check per-game toggle
-            if !game_preferences::is_game_enabled(&detected_game.name) {
+            let preferences = game_preferences::get_game_preference(&detected_game.name);
+            if !preferences.enabled {
                 return;
             }
 
@@ -220,8 +221,13 @@ pub fn handle_process(proc: Process) {
 
             let w_name = filename.clone();
 
+            let game_resolution = preferences
+                .resolution_x_override
+                .zip(preferences.resolution_y_override);
+
             let recorder_settings = RecordingSettings {
                 resolution: settings.resolution,
+                game_resolution,
                 framerate: settings.framerate,
                 bitrate: settings.bitrate,
                 folder: get_clipping_folder(),

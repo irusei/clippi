@@ -6,10 +6,28 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct GamePreference {
-    #[serde(default)]
+    #[serde(default = "default_enabled")]
     pub enabled: bool,
+    #[serde(default)]
+    pub resolution_x_override: Option<u32>,
+    #[serde(default)]
+    pub resolution_y_override: Option<u32>,
+}
+
+impl Default for GamePreference {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            resolution_x_override: None,
+            resolution_y_override: None,
+        }
+    }
+}
+
+fn default_enabled() -> bool {
+    true
 }
 
 static GAME_PREFERENCES: LazyLock<Mutex<std::collections::HashMap<String, GamePreference>>> =
@@ -20,21 +38,24 @@ pub fn get_game_preferences() -> std::collections::HashMap<String, GamePreferenc
     prefs.clone()
 }
 
-pub fn set_game_preference(game_name: &str, enabled: bool) {
+pub fn get_game_preference(game_name: &str) -> GamePreference {
+    get_game_preferences()
+        .entry(game_name.to_string())
+        .or_insert_with(GamePreference::default)
+        .clone()
+}
+
+pub fn set_game_preference(game_name: &str, preferences: GamePreference) {
     {
         let mut prefs = GAME_PREFERENCES.lock().unwrap();
-        prefs
+        let pref = prefs
             .entry(game_name.to_string())
-            .or_insert_with(GamePreference::default)
-            .enabled = enabled;
+            .or_insert_with(GamePreference::default);
+
+        *pref = preferences;
     }
 
     save_preferences_to_file();
-}
-
-pub fn is_game_enabled(game_name: &str) -> bool {
-    let prefs = GAME_PREFERENCES.lock().unwrap();
-    prefs.get(game_name).map(|p| p.enabled).unwrap_or(true) // default to enabled if not set
 }
 
 fn load_preferences_from_file() -> std::collections::HashMap<String, GamePreference> {

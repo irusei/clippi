@@ -14,7 +14,7 @@ use crate::{
     integrations::discord::rpc,
     storage::{
         clips::{clean_path, prefix_path, Clip},
-        game_preferences::{self as game_pref_storage},
+        game_preferences::{self as game_pref_storage, GamePreference},
         games::DetectedGameData,
         settings::{get_clipping_folder, Settings},
         storage_info::StorageInfo,
@@ -165,13 +165,13 @@ fn edit_game(old_game: DetectedGameData, new_game: DetectedGameData) {
 }
 
 #[tauri::command]
-fn get_game_preferences() -> std::collections::HashMap<String, game_pref_storage::GamePreference> {
-    game_pref_storage::get_game_preferences()
+fn get_game_preference(game_name: String) -> GamePreference {
+    game_pref_storage::get_game_preference(&game_name)
 }
 
 #[tauri::command]
-fn set_game_preference(game_name: String, enabled: bool) {
-    game_pref_storage::set_game_preference(&game_name, enabled);
+fn set_game_preference(game_name: String, preferences: GamePreference) {
+    game_pref_storage::set_game_preference(&game_name, preferences);
 }
 
 #[tauri::command]
@@ -282,7 +282,7 @@ pub fn run() {
             edit_game,
             get_current_game,
             list_processes,
-            get_game_preferences,
+            get_game_preference,
             set_game_preference,
             get_storage_info,
             upload_clip,

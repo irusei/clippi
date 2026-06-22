@@ -1,5 +1,11 @@
 import { LeagueResult } from "./integration/league/LeagueTypes";
 
+export interface GamePreference {
+    enabled: boolean;
+    resolution_x_override: number | null;
+    resolution_y_override: number | null;
+}
+
 export interface DetectedGame {
     name: string;
     icon: string | null;
