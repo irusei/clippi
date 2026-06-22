@@ -30,6 +30,7 @@ import {
 } from "recharts";
 import Input from "./ui/Input";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { platform } from "@tauri-apps/plugin-os";
 import RightPanel from "./RightPanel";
 import { getMarkerData } from "../integration/MarkerData";
 
@@ -39,7 +40,11 @@ interface ClipViewerProps {
     reloadClips: () => void;
 }
 
-export default function ClipViewer({ clip, onExitClip, reloadClips }: ClipViewerProps) {
+export default function ClipViewer({
+    clip,
+    onExitClip,
+    reloadClips,
+}: ClipViewerProps) {
     const playerRef = useRef<HTMLVideoElement | null>(null);
     const timelineRef = useRef<HTMLDivElement | null>(null);
 
@@ -294,6 +299,12 @@ export default function ClipViewer({ clip, onExitClip, reloadClips }: ClipViewer
             </div>
 
             <div className="relative flex items-center justify-center flex-1 bg-mocha-crust overflow-hidden">
+                {platform() === "linux" && (
+                    <div className="absolute z-30 flex items-center justify-center">
+                        <p>Clip playback is currently not supported on Linux</p>
+                    </div>
+                )}
+
                 {showRightPanel && (
                     <RightPanel
                         clip={clip}

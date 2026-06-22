@@ -10,7 +10,6 @@ import { FilterOptions } from "../types";
 import { Select } from "../components/ui/Select";
 import { isOverStorageLimit } from "../utils";
 import { AlertCircle, Trash2, Star, X } from "lucide-react";
-import { platform } from "@tauri-apps/plugin-os";
 import { confirm } from "@tauri-apps/plugin-dialog";
 
 function getSortedUniqueGames(clips: VodClip[]): [DetectedGame, number][] {
@@ -51,14 +50,6 @@ export default function ClipTab() {
     const isStorageLimitReached =
         storageInfo &&
         isOverStorageLimit(storageInfo.clips_size, maxStorageLimit);
-
-    function _setSelectedClip(clip: VodClip) {
-        if (platform() === "windows") setSelectedClip(clip);
-        else
-            alert(
-                "unfortunately due to tauri requiring a merged PR (#14402) clip playback isn't really possible atm, this will be fixed when this gets hopefully merged",
-            );
-    }
 
     function getClips() {
         invoke("get_clips").then((res) => {
@@ -107,7 +98,7 @@ export default function ClipTab() {
             setSelectedClipIds(newSelected);
             setLastSelectedClipId(clip.id);
         } else {
-            _setSelectedClip(clip);
+            setSelectedClip(clip);
         }
     }
 
