@@ -1,5 +1,4 @@
 import { Result, Bookmark as BookmarkType } from "../types";
-import { LeagueGameEvent } from "./league/LeagueTypes";
 import { getPlayerPosition } from "./league/LeagueUtils";
 export interface MarkerData {
     label: string;
