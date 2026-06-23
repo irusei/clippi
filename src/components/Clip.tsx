@@ -36,7 +36,9 @@ export default function Clip({ clip, onSelect, isSelected }: ClipProps) {
         clip.integration_result?.type === "LeagueResult"
             ? getGameResult(clip.integration_result) === "Win"
                 ? "bg-mocha-green"
-                : "bg-mocha-red"
+                : getGameResult(clip.integration_result) == "Lose"
+                  ? "bg-mocha-red"
+                  : "bg-mocha-overlay1"
             : undefined;
 
     return (
