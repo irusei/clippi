@@ -46,6 +46,8 @@ use wmi::WMIConnection;
 pub struct Process {
     pub name: String,
     pub process_id: u32,
+    #[cfg(target_os = "windows")]
+    pub executable_path: Option<String>,
 }
 
 static RECORDING_START_TIME: LazyLock<Mutex<Option<SystemTime>>> =
@@ -256,22 +258,19 @@ pub fn handle_process(proc: Process) {
             // start input monitoring before recording begins
             start_input_monitoring();
 
-            if let Err(e) = record(
-                w_name,
-                &detected_game,
-                recorder_settings,
-                Box::new(move |clip_path| {
-                    thread::sleep(Duration::from_secs(1));
-                    let bookmarks = get_current_bookmarks();
-                    let action_count = get_action_count();
+            let recorder_result = record(w_name, &detected_game, recorder_settings);
+            let bookmarks = get_current_bookmarks();
+            let action_count = get_action_count();
 
-                    set_current_game(None);
-                    set_recording_start_time(None);
-                    announce_current_game(None);
-                    stop_input_monitoring();
-                    let integration_result = stop_integration();
-                    rpc::clear_activity();
+            set_current_game(None);
+            set_recording_start_time(None);
+            announce_current_game(None);
+            stop_input_monitoring();
+            let integration_result = stop_integration();
+            rpc::clear_activity();
 
+            match recorder_result {
+                Ok(clip_path) => {
                     store_clip(
                         crate::storage::clips::ClipType::Recording,
                         clip_path,
@@ -280,16 +279,10 @@ pub fn handle_process(proc: Process) {
                         action_count,
                         integration_result,
                     );
-                }),
-            ) {
-                eprintln!("An error occurred while recording: {:?}", e);
-
-                set_current_game(None);
-                set_recording_start_time(None);
-                announce_current_game(None);
-                stop_input_monitoring();
-                stop_integration();
-                rpc::clear_activity();
+                }
+                Err(e) => {
+                    eprintln!("An error occurred while recording: {:?}", e.to_string());
+                }
             }
         }
     }

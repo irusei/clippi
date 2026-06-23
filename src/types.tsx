@@ -1,3 +1,4 @@
+import { KovaaKsResult } from "./integration/kovaaks/KovaaksTypes";
 import { LeagueResult } from "./integration/league/LeagueTypes";
 
 export interface GamePreference {
@@ -39,7 +40,7 @@ export type BaseResult = {
     type: string;
 };
 
-export type Result = LeagueResult;
+export type Result = LeagueResult | KovaaKsResult;
 
 export type ClipType = "Recording" | "Clip";
 export type VodEncoder = "X264" | "H264" | "HEVC" | "AV1";

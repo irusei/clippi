@@ -31,8 +31,6 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-type OnFinishedCallback = Box<dyn FnOnce(PathBuf) + Send>;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum VodEncoder {
     X264,
@@ -64,8 +62,7 @@ pub fn record(
     window_exe_name: String,
     game: &DetectedGameData,
     settings: RecordingSettings,
-    on_finished: OnFinishedCallback,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<PathBuf> {
     let date = get_date_format();
     let output_file = format!("{} - {}.mp4", date, game.name);
 
@@ -175,18 +172,14 @@ pub fn record(
     kill.wait()?;
 
     let path = PathBuf::from(output_path);
-    println!("saved to {:?}", path);
-    on_finished(path);
-
-    Ok(())
+    Ok(path)
 }
 #[cfg(target_os = "windows")]
 pub fn record(
     window_exe_name: String,
     game: &DetectedGameData,
     settings: RecordingSettings,
-    on_finished: OnFinishedCallback,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<PathBuf> {
     let date = get_date_format();
     let output_file = format!("{} - {}.mp4", date, game.name);
 
@@ -210,6 +203,7 @@ pub fn record(
         .output_height(settings.resolution.1)
         .fps_num(settings.framerate)
         .fps_den(1)
+        .scale_type(libobs_wrapper::enums::ObsScaleType::Lanczos)
         .build();
 
     let startup_info = StartupInfo::new().set_video_info(video_info);
@@ -356,8 +350,5 @@ pub fn record(
 
     output.stop()?;
     let path = PathBuf::from(output_path);
-    println!("saved to {:?}", path);
-    on_finished(path);
-
-    Ok(())
+    Ok(path)
 }

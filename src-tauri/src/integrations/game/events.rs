@@ -6,7 +6,10 @@ use std::{
 use dyn_clone::DynClone;
 
 use crate::{
-    integrations::game::lol::league_events::LeagueGameIntegration, storage::games::DetectedGameData,
+    integrations::game::{
+        kovaaks::kovaaks_events::KovaaKsGameIntegration, lol::league_events::LeagueGameIntegration,
+    },
+    storage::games::DetectedGameData,
 };
 
 #[typetag::serde(tag = "type")]
@@ -27,6 +30,7 @@ static CURRENT_GAME_INTEGRATION: LazyLock<
 pub fn start_integration(game: &DetectedGameData) {
     let event: Box<dyn GameIntegration + Send + Sync> = match game.name.as_str() {
         "League of Legends" => Box::new(LeagueGameIntegration::default()),
+        "KovaaK's" => Box::new(KovaaKsGameIntegration::default()),
         _ => return,
     };
 

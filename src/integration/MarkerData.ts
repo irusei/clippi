@@ -19,89 +19,120 @@ export function getMarkerData(
         }));
 
     const markers: MarkerData[] = [];
-    const offset = integration.offset / 1000;
 
-    function add(event: LeagueGameEvent, name: string, color: string) {
+    function add(time: number, name: string, color: string) {
         markers.push({
             label: name,
-            time: event.EventTime + offset,
+            time: time,
             colorClass: color,
         });
     }
 
-    const username = integration.data.current_player_data.riotId.split("#")[0];
-
-    if (integration.type === "LeagueResult") {
-        for (const event of integration.data.game_events.Events) {
-            switch (event.EventName) {
-                case "ChampionKill":
-                    if (
-                        event.KillerName === username ||
-                        event.Assisters.includes(username)
-                    ) {
-                        const enemyPos = getPlayerPosition(
-                            integration,
-                            event.VictimName,
-                        );
-                        add(
-                            event,
-                            `KILLED ${enemyPos != null ? enemyPos.toUpperCase() : event.VictimName}`,
-                            "bg-mocha-mauve",
-                        );
-                    } else if (event.VictimName === username) {
-                        const killerPos = getPlayerPosition(
-                            integration,
-                            event.KillerName,
-                        );
-                        add(
-                            event,
-                            `DIED TO ${killerPos != null ? killerPos.toUpperCase() : event.KillerName}`,
-                            "bg-mocha-red",
-                        );
-                    }
-                    break;
-                case "TurretKilled":
-                    if (
-                        event.KillerName === username ||
-                        event.Assisters.includes(username)
-                    ) {
-                        add(event, "TURRET DESTROYED", "bg-mocha-blue");
-                    }
-                    break;
-                case "BaronKill":
-                    if (
-                        event.KillerName === username ||
-                        event.Assisters.includes(username)
-                    ) {
-                        add(event, "TOOK BARON", "bg-mocha-lavender");
-                    }
-                    break;
-                case "DragonKill":
-                    if (
-                        event.KillerName === username ||
-                        event.Assisters.includes(username)
-                    ) {
-                        add(event, `TOOK DRAGON`, "bg-mocha-lavender");
-                    }
-                    break;
-                case "HeraldKill":
-                    if (
-                        event.KillerName === username ||
-                        event.Assisters.includes(username)
-                    ) {
-                        add(event, "TOOK HERALD", "bg-mocha-lavender");
-                    }
-                    break;
-                case "HordeKill":
-                    if (
-                        event.KillerName === username ||
-                        event.Assisters.includes(username)
-                    ) {
-                        add(event, "TOOK VOIDGRUBS", "bg-mocha-lavender");
-                    }
-                    break;
+    switch (integration.type) {
+        case "LeagueResult":
+            const offset = integration.offset / 1000;
+            const username =
+                integration.data.current_player_data.riotId.split("#")[0];
+            for (const event of integration.data.game_events.Events) {
+                switch (event.EventName) {
+                    case "ChampionKill":
+                        if (
+                            event.KillerName === username ||
+                            event.Assisters.includes(username)
+                        ) {
+                            const enemyPos = getPlayerPosition(
+                                integration,
+                                event.VictimName,
+                            );
+                            add(
+                                event.EventTime + offset,
+                                `KILLED ${enemyPos != null ? enemyPos.toUpperCase() : event.VictimName}`,
+                                "bg-mocha-mauve",
+                            );
+                        } else if (event.VictimName === username) {
+                            const killerPos = getPlayerPosition(
+                                integration,
+                                event.KillerName,
+                            );
+                            add(
+                                event.EventTime + offset,
+                                `DIED TO ${killerPos != null ? killerPos.toUpperCase() : event.KillerName}`,
+                                "bg-mocha-red",
+                            );
+                        }
+                        break;
+                    case "TurretKilled":
+                        if (
+                            event.KillerName === username ||
+                            event.Assisters.includes(username)
+                        ) {
+                            add(
+                                event.EventTime + offset,
+                                "TURRET DESTROYED",
+                                "bg-mocha-blue",
+                            );
+                        }
+                        break;
+                    case "BaronKill":
+                        if (
+                            event.KillerName === username ||
+                            event.Assisters.includes(username)
+                        ) {
+                            add(
+                                event.EventTime + offset,
+                                "TOOK BARON",
+                                "bg-mocha-lavender",
+                            );
+                        }
+                        break;
+                    case "DragonKill":
+                        if (
+                            event.KillerName === username ||
+                            event.Assisters.includes(username)
+                        ) {
+                            add(
+                                event.EventTime + offset,
+                                `TOOK DRAGON`,
+                                "bg-mocha-lavender",
+                            );
+                        }
+                        break;
+                    case "HeraldKill":
+                        if (
+                            event.KillerName === username ||
+                            event.Assisters.includes(username)
+                        ) {
+                            add(
+                                event.EventTime + offset,
+                                "TOOK HERALD",
+                                "bg-mocha-lavender",
+                            );
+                        }
+                        break;
+                    case "HordeKill":
+                        if (
+                            event.KillerName === username ||
+                            event.Assisters.includes(username)
+                        ) {
+                            add(
+                                event.EventTime + offset,
+                                "TOOK VOIDGRUBS",
+                                "bg-mocha-lavender",
+                            );
+                        }
+                        break;
+                }
             }
-        }
+            break;
+        case "KovaaKsResult":
+            for (const scenario of integration.data.scenarios) {
+                add(
+                    scenario.adjusted_finish_time / 1000,
+                    `${scenario.name} - ${scenario.score.toFixed(2)}`,
+                    "bg-mocha-green",
+                );
+            }
+            break;
     }
 
     const all = [

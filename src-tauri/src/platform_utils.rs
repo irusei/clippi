@@ -115,19 +115,6 @@ pub fn get_titles(_pid: u32) -> Vec<String> {
     vec![] // TODO: idk how to do this
 }
 
-#[cfg(target_os = "windows")]
-pub fn rescan_processes(wmi_con: &WMIConnection) {
-    if get_current_game().is_none() {
-        let processes: Vec<Process> = wmi_con
-            .raw_query("SELECT Name, ProcessId FROM Win32_Process")
-            .unwrap();
-
-        for proc in processes {
-            handle_process(proc);
-        }
-    }
-}
-
 #[cfg(target_os = "linux")]
 pub fn helper_get_processes() -> Vec<Process> {
     let mut processes: Vec<Process> = vec![];
@@ -170,6 +157,32 @@ pub fn helper_get_processes() -> Vec<Process> {
 
     processes
 }
+
+#[cfg(target_os = "windows")]
+pub fn helper_get_processes() -> Vec<Process> {
+    let wmi_con = match WMIConnection::new() {
+        Ok(con) => con,
+        Err(_) => return vec![],
+    };
+
+    wmi_con
+        .raw_query("SELECT Name, ProcessId, ExecutablePath FROM Win32_Process")
+        .unwrap()
+}
+
+#[cfg(target_os = "windows")]
+pub fn rescan_processes(wmi_con: &WMIConnection) {
+    if get_current_game().is_none() {
+        let processes: Vec<Process> = wmi_con
+            .raw_query("SELECT Name, ProcessId, ExecutablePath FROM Win32_Process")
+            .unwrap();
+
+        for proc in processes {
+            handle_process(proc);
+        }
+    }
+}
+
 #[cfg(target_os = "linux")]
 pub fn rescan_processes() {
     if get_current_game().is_none() {
