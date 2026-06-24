@@ -3,12 +3,16 @@ import { useState, useEffect } from "react";
 import {
     getGameResult,
     getImageFromChampionName,
+    getImageFromItemName,
     getImageFromSpellName,
     getSelf,
     getPositionName,
-} from "../integration/league/LeagueUtils";
-import { LeagueResult, LeaguePlayer } from "../integration/league/LeagueTypes";
-import { formatTime } from "../utils";
+} from "../../../integration/league/LeagueUtils";
+import {
+    LeagueResult,
+    LeaguePlayer,
+} from "../../../integration/league/LeagueTypes";
+import { formatTime } from "../../../utils";
 
 function groupPlayersByTeam(
     players: LeaguePlayer[],
@@ -53,7 +57,7 @@ function ChampionIcon({
 
     return (
         <img
-            className="w-6 h-6 rounded-md bg-mocha-surface0 border border-mocha-crust object-cover"
+            className="w-8 h-8 rounded-md bg-mocha-surface0 border border-mocha-crust object-cover"
             src={src || ""}
             alt={championName}
             title={title}
@@ -95,6 +99,27 @@ function PlayerRow({
         fetchSpells();
     }, [player]);
 
+    const [itemImages, setItemImages] = useState<string[]>([]);
+
+    useEffect(() => {
+        async function fetchItems() {
+            const images = (
+                (await Promise.all(
+                    player.items
+                        .sort((a, b) => a.slot - b.slot)
+                        .map(async (item) => {
+                            const src = await getImageFromItemName(
+                                item.displayName,
+                            );
+                            return src || "";
+                        }),
+                )) as string[]
+            ).filter((src) => src !== "");
+            setItemImages(images);
+        }
+        fetchItems();
+    }, [player.items]);
+
     return (
         <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-mocha-base/50 hover:bg-mocha-base transition-colors">
             <ChampionIcon
@@ -125,10 +150,23 @@ function PlayerRow({
                             YOU
                         </span>
                     )}
-                    <span className="text-[10px] text-mocha-overlay1 bg-mocha-surface0 px-1 rounded">Lv.{player.level}</span>
+                    <span className="text-[10px] text-mocha-overlay1 bg-mocha-surface0 px-1 rounded">
+                        Lv.{player.level}
+                    </span>
                 </div>
-                <div className="text-[10px] text-mocha-overlay1">
+                <div className="text-[10px] text-mocha-overlay1 mt-0.5">
                     <span>{getPositionName(player.position)}</span>
+                </div>
+                <div className="flex items-center gap-0.5 mt-0.5">
+                    {itemImages.map((src, i) => (
+                        <img
+                            key={i}
+                            className="w-3.5 h-3.5 rounded bg-mocha-surface0 border border-mocha-crust object-cover"
+                            src={src}
+                            alt=""
+                            title={player.items[i]?.displayName ?? ""}
+                        />
+                    ))}
                 </div>
             </div>
             <div className="flex flex-col items-end gap-px">
@@ -188,7 +226,11 @@ function TeamPanel({
     );
 }
 
-export default function ScoreboardTab({ result }: { result: LeagueResult }) {
+export default function LeagueScoreboardTab({
+    result,
+}: {
+    result: LeagueResult;
+}) {
     const [gameTime] = useState(result.data.game_stats.gameTime);
     const self = getSelf(result);
     const gameResult = getGameResult(result);

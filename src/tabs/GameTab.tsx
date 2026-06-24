@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { DetectedGame } from "../types";
+import { DetectedGame, GamePreference } from "../types";
 import { invoke } from "@tauri-apps/api/core";
 import { Switch } from "../components/ui/Switch";
 import Input from "../components/ui/Input";
 import ProcessPicker from "../components/ProcessPicker";
 import { Plus, Save, Search, Trash } from "lucide-react";
 import { SettingsContainer } from "../components/ui/SettingsContainer";
+import { clamp } from "../utils";
+import { platform } from "@tauri-apps/plugin-os";
 
 interface GameProps {
     game: DetectedGame;
@@ -20,7 +22,7 @@ export function GameView({ game, onClick, selected }: GameProps) {
             onClick={onClick}
         >
             <img className="w-8 h-8" src={game.icon ?? ""} />
-            <p className="truncate text-md">{game.name}</p>
+            <p className="truncate text-md flex-1">{game.name}</p>
         </div>
     );
 }
@@ -29,6 +31,9 @@ export default function GameTab() {
     let [chosenGame, setChosenGame] = useState<DetectedGame | null>(null);
     let [modifiedGame, setModifiedGame] = useState<DetectedGame | null>(null);
     let [searchQuery, setSearchQuery] = useState<string>("");
+    let [gamePreferences, setGamePreferences] = useState<GamePreference | null>(
+        null,
+    );
 
     function getGames() {
         invoke("get_games").then((games) => {
@@ -36,8 +41,23 @@ export default function GameTab() {
         });
     }
 
+    function getPreferences() {
+        if (chosenGame == null) return;
+        invoke("get_game_preference", { gameName: chosenGame!.name }).then(
+            (prefs) => {
+                setGamePreferences(prefs as GamePreference);
+            },
+        );
+    }
+
     function editGame() {
         invoke("edit_game", { oldGame: chosenGame, newGame: modifiedGame });
+        if (gamePreferences != null)
+            invoke("set_game_preference", {
+                gameName: modifiedGame!.name,
+                preferences: gamePreferences,
+            });
+
         setChosenGame(modifiedGame);
         getGames();
     }
@@ -53,14 +73,22 @@ export default function GameTab() {
         setModifiedGame({ ...modifiedGame, [key]: value });
     };
 
+    const updatePreferenceField = (key: keyof GamePreference, value: any) => {
+        if (!gamePreferences) return;
+        setGamePreferences({ ...gamePreferences, [key]: value });
+    };
+
     useEffect(() => {
         getGames();
     }, []);
 
+    // update preferences
+    useEffect(getPreferences, [chosenGame]);
+
     return (
         <div className="bg-mocha-mantle w-full h-screen">
             <div className="px-10 py-8 h-full flex flex-col overflow-hidden">
-                <div className="flex flex-row justify-between items-center space-x-60">
+                <div className="flex flex-row justify-between items-center mb-4">
                     <h2 className="text-3xl font-semibold text-mocha-text mb-4">
                         Supported games
                     </h2>
@@ -89,7 +117,7 @@ export default function GameTab() {
                                 });
                             });
                         }}
-                        className="bg-mocha-mauve hover:bg-mocha-mauve/80 transition-colors rounded-md py-2 px-4 font-semibold text-mocha-base mt-2 items-center flex flex-row gap-x-2"
+                        className="bg-mocha-mauve hover:bg-mocha-mauve/80 transition-colors rounded-md py-2 px-4 font-semibold text-mocha-base items-center flex flex-row gap-x-2"
                     >
                         <Plus className="w-4 h-4" />
                         <p>New game</p>
@@ -104,7 +132,7 @@ export default function GameTab() {
                                 value={searchQuery}
                                 placeholder="Search..."
                                 onChange={(value) => setSearchQuery(value)}
-                                className="focus:border-none border-none max-w-40 rounded-sm"
+                                className="flex-1 focus:border-none border-none rounded-sm"
                             />
                         </div>
                         <div className="flex flex-col gap-y-2 overflow-y-auto pr-4">
@@ -237,10 +265,6 @@ export default function GameTab() {
                                                     key={index}
                                                     className="flex items-center gap-2"
                                                 >
-                                                    <span className="text-xs text-mocha-overlay1 w-6">
-                                                        {index + 1}.
-                                                    </span>
-
                                                     <Input
                                                         className="bg-mocha-mantle flex-1"
                                                         type="text"
@@ -283,7 +307,7 @@ export default function GameTab() {
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col gap-4 p-4 rounded-lg bg-mocha-base">
+                                <div className="flex flex-col p-4 rounded-lg bg-mocha-base gap-y-4">
                                     <div className="flex flex-row justify-between">
                                         <div className="flex flex-col gap-1">
                                             <span className="text-sm font-medium text-mocha-text">
@@ -309,57 +333,59 @@ export default function GameTab() {
                                         </button>
                                     </div>
 
-                                    <div className="flex flex-col gap-y-2">
-                                        {modifiedGame.title_regex.map(
-                                            (regex, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <span className="text-xs text-mocha-overlay1 w-6">
-                                                        {index + 1}.
-                                                    </span>
-
-                                                    <Input
-                                                        className="bg-mocha-mantle flex-1"
-                                                        type="text"
-                                                        value={regex}
-                                                        onChange={(value) => {
-                                                            const updated = [
-                                                                ...modifiedGame.title_regex,
-                                                            ];
-                                                            updated[index] =
-                                                                value;
-                                                            updateField(
-                                                                "title_regex",
-                                                                updated,
-                                                            );
-                                                        }}
-                                                    />
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const updated = [
-                                                                ...modifiedGame.title_regex,
-                                                            ];
-                                                            updated.splice(
-                                                                index,
-                                                                1,
-                                                            );
-                                                            updateField(
-                                                                "title_regex",
-                                                                updated,
-                                                            );
-                                                        }}
-                                                        className="text-red-400 hover:text-red-500 px-2"
+                                    {modifiedGame.title_regex.length > 0 && (
+                                        <div className="flex flex-col gap-y-2">
+                                            {modifiedGame.title_regex.map(
+                                                (regex, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="flex items-center gap-2"
                                                     >
-                                                        <Trash className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            ),
-                                        )}
-                                    </div>
+                                                        <Input
+                                                            className="bg-mocha-mantle flex-1"
+                                                            type="text"
+                                                            value={regex}
+                                                            onChange={(
+                                                                value,
+                                                            ) => {
+                                                                const updated =
+                                                                    [
+                                                                        ...modifiedGame.title_regex,
+                                                                    ];
+                                                                updated[index] =
+                                                                    value;
+                                                                updateField(
+                                                                    "title_regex",
+                                                                    updated,
+                                                                );
+                                                            }}
+                                                        />
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const updated =
+                                                                    [
+                                                                        ...modifiedGame.title_regex,
+                                                                    ];
+                                                                updated.splice(
+                                                                    index,
+                                                                    1,
+                                                                );
+                                                                updateField(
+                                                                    "title_regex",
+                                                                    updated,
+                                                                );
+                                                            }}
+                                                            className="text-red-400 hover:text-red-500 px-2"
+                                                        >
+                                                            <Trash className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                ),
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 
@@ -382,6 +408,91 @@ export default function GameTab() {
                                     />
                                 </SettingsContainer>
                             </section>
+
+                            {gamePreferences && (
+                                <section className="flex flex-col gap-4">
+                                    <h3 className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">
+                                        PERSONAL SETTINGS
+                                    </h3>
+
+                                    <div className="flex flex-col gap-3 px-1">
+                                        <SettingsContainer
+                                            title="Enable"
+                                            description="Enable recording for this game"
+                                        >
+                                            <Switch
+                                                checked={
+                                                    gamePreferences.enabled
+                                                }
+                                                onChecked={(value) =>
+                                                    updatePreferenceField(
+                                                        "enabled",
+                                                        value,
+                                                    )
+                                                }
+                                            />
+                                        </SettingsContainer>
+
+                                        {platform() === "windows" && (
+                                            <>
+                                                <SettingsContainer
+                                                    title="Width Override"
+                                                    description="Override width resolution for this game"
+                                                >
+                                                    <Input
+                                                        type="number"
+                                                        className="bg-mocha-mantle w-1/2"
+                                                        value={
+                                                            gamePreferences.resolution_x_override
+                                                        }
+                                                        onChange={(value) => {
+                                                            updatePreferenceField(
+                                                                "resolution_x_override",
+                                                                value
+                                                                    ? clamp(
+                                                                          parseInt(
+                                                                              value,
+                                                                          ),
+                                                                          1,
+                                                                          8192,
+                                                                      )
+                                                                    : null,
+                                                            );
+                                                        }}
+                                                    />
+                                                </SettingsContainer>
+
+                                                <SettingsContainer
+                                                    title="Height Override"
+                                                    description="Override height resolution for this game"
+                                                >
+                                                    <Input
+                                                        type="number"
+                                                        className="bg-mocha-mantle w-1/2"
+                                                        value={
+                                                            gamePreferences.resolution_y_override
+                                                        }
+                                                        onChange={(value) => {
+                                                            updatePreferenceField(
+                                                                "resolution_y_override",
+                                                                value
+                                                                    ? clamp(
+                                                                          parseInt(
+                                                                              value,
+                                                                          ),
+                                                                          1,
+                                                                          8192,
+                                                                      )
+                                                                    : null,
+                                                            );
+                                                        }}
+                                                    />
+                                                </SettingsContainer>
+                                            </>
+                                        )}
+                                    </div>
+                                </section>
+                            )}
                         </div>
                     )}
                 </div>

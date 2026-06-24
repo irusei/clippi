@@ -29,6 +29,33 @@ pub struct Settings {
     pub discord_rpc_enabled: bool,
     #[serde(default)]
     pub windows_autostart: bool,
+
+    #[serde(default = "default_bookmark_key")]
+    pub bookmark_key: String,
+
+    #[serde(default = "default_recording_enabled")]
+    pub recording_enabled: bool,
+
+    #[serde(default)]
+    pub upload_endpoint: Option<String>,
+
+    #[serde(default)]
+    pub upload_token: Option<String>,
+
+    #[serde(default = "default_max_storage_limit")]
+    pub max_storage_limit: String,
+}
+
+fn default_recording_enabled() -> bool {
+    true
+}
+
+fn default_bookmark_key() -> String {
+    String::from("F8")
+}
+
+fn default_max_storage_limit() -> String {
+    String::from("Unlimited")
 }
 
 static SETTINGS: LazyLock<Mutex<Settings>> =
@@ -37,6 +64,22 @@ static SETTINGS: LazyLock<Mutex<Settings>> =
 pub fn get_settings() -> Settings {
     let settings_locked = SETTINGS.lock().unwrap();
     return settings_locked.clone();
+}
+
+pub fn is_over_limit(total_clip_size: u64) -> bool {
+    fn remove_unit_from_max_clip_size(max_clip_size: String) -> u64 {
+        max_clip_size.split_once("GB").unwrap().0.parse().unwrap()
+    }
+
+    let max_clip_size = get_settings().max_storage_limit;
+    if max_clip_size == "Unlimited" {
+        return false;
+    }
+
+    let gb_bytes = 1024 * 1024 * 1024;
+    let max_clip_size_digit = remove_unit_from_max_clip_size(max_clip_size);
+
+    return total_clip_size >= max_clip_size_digit * gb_bytes;
 }
 
 fn load_settings_from_file() -> Settings {
@@ -66,6 +109,11 @@ fn load_settings_from_file() -> Settings {
                 capture_mic: false,
                 discord_rpc_enabled: false,
                 windows_autostart: false,
+                bookmark_key: String::from("F8"),
+                recording_enabled: true,
+                upload_endpoint: None,
+                upload_token: None,
+                max_storage_limit: String::from("Unlimited"),
             }
         }
         true => {

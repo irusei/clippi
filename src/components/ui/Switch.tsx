@@ -33,18 +33,17 @@ export function Switch({
 
             <div
                 className={clsx(
-                    "w-11 h-6 rounded-full border border-mocha-mauve/20",
+                    "w-11 h-6 rounded-full bg-mocha-overlay1",
                     "transition-all duration-200",
-                    "peer-checked:bg-mocha-mauve/10",
-                    "peer-checked:border-mocha-mauve/20",
-                    "peer-focus:ring-2 peer-focus:ring-mocha-mauve/20",
+                    "peer-checked:bg-mocha-mauve",
+                    "peer-focus:outline-none",
                 )}
             />
 
             <div
                 className={clsx(
                     "absolute left-1 top-1",
-                    "w-4 h-4 rounded-full bg-mocha-mauve",
+                    "w-4 h-4 rounded-full bg-mocha-surface0",
                     "transition-transform duration-200",
                     "peer-checked:translate-x-5",
                 )}

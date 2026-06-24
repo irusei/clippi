@@ -31,8 +31,6 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-type OnFinishedCallback = Box<dyn FnOnce(PathBuf) + Send>;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum VodEncoder {
     X264,
@@ -44,6 +42,7 @@ pub enum VodEncoder {
 #[derive(Debug, Clone)]
 pub struct RecordingSettings {
     pub resolution: (u32, u32),
+    pub game_resolution: Option<(u32, u32)>,
     pub framerate: u32,
     pub bitrate: u32,
     pub folder: PathBuf,
@@ -63,8 +62,7 @@ pub fn record(
     window_exe_name: String,
     game: &DetectedGameData,
     settings: RecordingSettings,
-    on_finished: OnFinishedCallback,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<PathBuf> {
     let date = get_date_format();
     let output_file = format!("{} - {}.mp4", date, game.name);
 
@@ -174,18 +172,14 @@ pub fn record(
     kill.wait()?;
 
     let path = PathBuf::from(output_path);
-    println!("saved to {:?}", path);
-    on_finished(path);
-
-    Ok(())
+    Ok(path)
 }
 #[cfg(target_os = "windows")]
 pub fn record(
     window_exe_name: String,
     game: &DetectedGameData,
     settings: RecordingSettings,
-    on_finished: OnFinishedCallback,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<PathBuf> {
     let date = get_date_format();
     let output_file = format!("{} - {}.mp4", date, game.name);
 
@@ -193,13 +187,23 @@ pub fn record(
 
     let output_path = full_path.to_string_lossy().to_string();
 
+    let base_width = settings
+        .game_resolution
+        .map(|r| r.0)
+        .unwrap_or(settings.resolution.0);
+    let base_height = settings
+        .game_resolution
+        .map(|r| r.1)
+        .unwrap_or(settings.resolution.1);
+
     let video_info = ObsVideoInfoBuilder::new()
-        .base_width(settings.resolution.0)
-        .base_height(settings.resolution.1)
+        .base_width(base_width)
+        .base_height(base_height)
         .output_width(settings.resolution.0)
         .output_height(settings.resolution.1)
         .fps_num(settings.framerate)
         .fps_den(1)
+        .scale_type(libobs_wrapper::enums::ObsScaleType::Lanczos)
         .build();
 
     let startup_info = StartupInfo::new().set_video_info(video_info);
@@ -222,8 +226,7 @@ pub fn record(
             .create_updater()?
             .set_window_raw(&*window.obs_id)
             .set_capture_method(ObsWindowCaptureMethod::MethodWgc)
-            .set_capture_audio(!settings.capture_desktop_audio)
-            .unwrap()
+            .set_capture_audio(!settings.capture_desktop_audio)?
             .update()?;
 
         let item = scene.add_source(source)?;
@@ -239,8 +242,7 @@ pub fn record(
         source
             .create_updater()?
             .set_window_raw(&*window.obs_id)
-            .set_capture_audio(!settings.capture_desktop_audio)
-            .unwrap()
+            .set_capture_audio(!settings.capture_desktop_audio)?
             .set_anti_cheat_hook(true)
             .update()?;
 
@@ -256,9 +258,7 @@ pub fn record(
             )?
             .build()?;
 
-        scene
-            .add_source(mic_source)
-            .expect("failed to add mic source");
+        scene.add_source(mic_source)?;
     }
 
     // create desktop audio source
@@ -269,9 +269,7 @@ pub fn record(
             )?
             .build()?;
 
-        scene
-            .add_source(desktop_audio_source)
-            .expect("failed to add desktop audio source");
+        scene.add_source(desktop_audio_source)?;
     }
 
     let mut output_builder = ctx
@@ -346,8 +344,5 @@ pub fn record(
 
     output.stop()?;
     let path = PathBuf::from(output_path);
-    println!("saved to {:?}", path);
-    on_finished(path);
-
-    Ok(())
+    Ok(path)
 }

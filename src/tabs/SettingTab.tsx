@@ -1,17 +1,21 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
-import { Settings } from "../types";
+import { Settings, StorageInfo } from "../types";
 import { Switch } from "../components/ui/Switch";
 import { SettingsContainer } from "../components/ui/SettingsContainer";
 import Input from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
+import { KeybindingInput } from "../components/ui/KeybindingInput";
 import { platform } from "@tauri-apps/plugin-os";
-import { Folder } from "lucide-react";
+import { Folder, HardDrive } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { formatBytes } from "../utils";
+import { emit, listen } from "@tauri-apps/api/event";
 
 export default function SettingTab() {
     const [settings, setSettings] = useState<Settings | null>(null);
     const [newClipPath, setNewClipPath] = useState<string | null>(null);
+    const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
 
     useEffect(() => {
         invoke("get_settings").then((res) => {
@@ -19,13 +23,30 @@ export default function SettingTab() {
             setSettings(newSettings);
             setNewClipPath(newSettings.clip_path);
         });
+
+        updateStorageInfo();
+
+        // make sure storage info updates after clipped
+        const ul = listen("set_clips", (_event) => {
+            updateStorageInfo();
+        });
+
+        return () => {
+            ul.then((ul) => ul());
+        };
     }, []);
 
+    function updateStorageInfo() {
+        invoke("get_storage_info").then((res) => {
+            setStorageInfo(res as StorageInfo);
+        });
+    }
     const updateSetting = (key: keyof Settings, value: any) => {
         if (!settings) return;
         const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
         invoke("set_settings", { newSettings: newSettings });
+        emit("settings_updated");
     };
 
     function getResolution() {
@@ -81,15 +102,168 @@ export default function SettingTab() {
                         Output
                     </h3>
 
-                    <div className="flex flex-col gap-4 px-1">
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-2">
                             <label className="text-sm font-medium text-mocha-text">
-                                Save Location
+                                Resolution
                             </label>
-                            <div className="flex gap-4 justify-center items-center">
+                            <Select
+                                className="bg-mocha-base"
+                                value={getResolution() ?? ""}
+                                onChange={(value) => setResolution(value)}
+                                options={[
+                                    ["720p", "720p"],
+                                    ["1080p", "1080p"],
+                                    ["1440p", "1440p"],
+                                    ["4K", "4K"],
+                                ]}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-mocha-text">
+                                Framerate
+                            </label>
+                            <Select
+                                className="bg-mocha-base"
+                                value={settings.framerate.toString()}
+                                onChange={(value) =>
+                                    updateSetting("framerate", parseInt(value))
+                                }
+                                options={[
+                                    ["30 FPS", "30"],
+                                    ["60 FPS", "60"],
+                                    ["120 FPS", "120"],
+                                    ["144 FPS", "144"],
+                                    ["165 FPS", "165"],
+                                    ["240 FPS", "240"],
+                                    ["360 FPS", "360"],
+                                ]}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-mocha-text">
+                                Bitrate (kbps)
+                            </label>
+                            <Input
+                                type="number"
+                                value={settings.bitrate}
+                                onChange={(value) =>
+                                    updateSetting("bitrate", parseInt(value))
+                                }
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-mocha-text">
+                                Codec
+                            </label>
+                            <Select
+                                className="bg-mocha-base"
+                                value={settings.encoder}
+                                onChange={(value) =>
+                                    updateSetting("encoder", value)
+                                }
+                                options={[
+                                    ["x264 (CPU)", "X264"],
+                                    ["H264", "H264"],
+                                    ["HEVC", "HEVC"],
+                                    ["AV1", "AV1"],
+                                ]}
+                            />
+                        </div>
+                    </div>
+                </section>
+
+                <section className="flex flex-col gap-4">
+                    <h3 className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">
+                        Storage
+                    </h3>
+
+                    <div className="flex flex-col gap-4 px-1">
+                        {storageInfo && (
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-3 text-sm text-mocha-text">
+                                    <HardDrive className="w-4 h-4 text-mocha-mauve" />
+                                    <span>
+                                        {formatBytes(storageInfo.free_space)}{" "}
+                                        free of{" "}
+                                        {formatBytes(storageInfo.total_space)}
+                                    </span>
+                                </div>
+                                <div className="w-full bg-mocha-overlay1 rounded-full h-2 flex overflow-hidden">
+                                    <div
+                                        className="bg-mocha-mauve h-2"
+                                        style={{
+                                            width: `${
+                                                storageInfo.total_space > 0
+                                                    ? (storageInfo.clips_size /
+                                                          storageInfo.total_space) *
+                                                      100
+                                                    : 0
+                                            }%`,
+                                        }}
+                                    />
+                                    <div
+                                        className="bg-mocha-overlay2 h-2"
+                                        style={{
+                                            width: `${
+                                                storageInfo.total_space > 0
+                                                    ? Math.max(
+                                                          0,
+                                                          (storageInfo.used_space -
+                                                              storageInfo.clips_size) /
+                                                              storageInfo.total_space,
+                                                      ) * 100
+                                                    : 0
+                                            }%`,
+                                        }}
+                                    />
+                                    <div
+                                        className="bg-mocha-surface1 h-2"
+                                        style={{
+                                            width: `${
+                                                storageInfo.total_space > 0
+                                                    ? (storageInfo.free_space /
+                                                          storageInfo.total_space) *
+                                                      100
+                                                    : 0
+                                            }%`,
+                                        }}
+                                    />
+                                </div>
+                                <div className="flex items-center gap-4 text-xs text-mocha-overlay2">
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-2.5 h-2.5 rounded-sm bg-mocha-mauve" />
+                                        <span>
+                                            Clips{" "}
+                                            <span className="font-medium">
+                                                (
+                                                {formatBytes(
+                                                    storageInfo.clips_size,
+                                                )}
+                                                )
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-2.5 h-2.5 rounded-sm bg-mocha-overlay2" />
+                                        <span>Other files</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-2.5 h-2.5 rounded-sm bg-mocha-surface1" />
+                                        <span>Free</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <SettingsContainer
+                            title="Save Location"
+                            description="Where your clips are saved"
+                        >
+                            <div className="w-1/4 flex gap-4 items-center pr-2">
                                 <Input
                                     type={"text"}
-                                    className={"flex-1"}
+                                    className={"flex-1 bg-mocha-mantle"}
                                     value={newClipPath}
                                     onBlur={() => {
                                         updateSetting("clip_path", newClipPath);
@@ -97,7 +271,7 @@ export default function SettingTab() {
                                     onChange={(value) => setNewClipPath(value)}
                                 />
                                 <Folder
-                                    className="text-mocha-mauve cursor-pointer"
+                                    className="text-mocha-mauve cursor-pointer w-5 h-5"
                                     onClick={() => {
                                         open({
                                             multiple: false,
@@ -109,81 +283,28 @@ export default function SettingTab() {
                                     }}
                                 />
                             </div>
-                        </div>
+                        </SettingsContainer>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-medium text-mocha-text">
-                                    Resolution
-                                </label>
-                                <Select
-                                    value={getResolution() ?? ""}
-                                    onChange={(value) => setResolution(value)}
-                                    options={[
-                                        ["720p", "720p"],
-                                        ["1080p", "1080p"],
-                                        ["1440p", "1440p"],
-                                        ["4K", "4K"],
-                                    ]}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-medium text-mocha-text">
-                                    Framerate
-                                </label>
-                                <Select
-                                    value={settings.framerate.toString()}
-                                    onChange={(value) =>
-                                        updateSetting(
-                                            "framerate",
-                                            parseInt(value),
-                                        )
-                                    }
-                                    options={[
-                                        ["30 FPS", "30"],
-                                        ["60 FPS", "60"],
-                                        ["120 FPS", "120"],
-                                        ["144 FPS", "144"],
-                                        ["165 FPS", "165"],
-                                        ["240 FPS", "240"],
-                                        ["360 FPS", "360"],
-                                    ]}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-medium text-mocha-text">
-                                    Bitrate (kbps)
-                                </label>
-                                <Input
-                                    type="number"
-                                    value={settings.bitrate}
-                                    onChange={(value) =>
-                                        updateSetting(
-                                            "bitrate",
-                                            parseInt(value),
-                                        )
-                                    }
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-medium text-mocha-text">
-                                    Codec
-                                </label>
-                                <Select
-                                    className=""
-                                    value={settings.encoder}
-                                    onChange={(value) =>
-                                        updateSetting("encoder", value)
-                                    }
-                                    options={[
-                                        ["x264 (CPU)", "X264"],
-                                        ["H264", "H264"],
-                                        ["HEVC", "H265"],
-                                        ["AV1", "AV1"],
-                                    ]}
-                                />
-                            </div>
-                        </div>
+                        <SettingsContainer
+                            title="Max Storage Limit"
+                            description="Maximum storage for clips"
+                        >
+                            <Select
+                                className="bg-mocha-mantle"
+                                value={settings.max_storage_limit}
+                                onChange={(value) =>
+                                    updateSetting("max_storage_limit", value)
+                                }
+                                options={[
+                                    ["10GB", "10GB"],
+                                    ["25GB", "25GB"],
+                                    ["50GB", "50GB"],
+                                    ["100GB", "100GB"],
+                                    ["250GB", "250GB"],
+                                    ["Unlimited", "Unlimited"],
+                                ]}
+                            />
+                        </SettingsContainer>
                     </div>
                 </section>
 
@@ -204,6 +325,7 @@ export default function SettingTab() {
                                 }
                             />
                         </SettingsContainer>
+
                         <SettingsContainer
                             title="Desktop Audio"
                             description="Additionally capture desktop audio on top of game sounds"
@@ -215,6 +337,45 @@ export default function SettingTab() {
                                         "capture_desktop_audio",
                                         value,
                                     )
+                                }
+                            />
+                        </SettingsContainer>
+                    </div>
+                </section>
+
+                <section className="flex flex-col gap-4">
+                    <h3 className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">
+                        Recording
+                    </h3>
+
+                    <div className="flex flex-col gap-3 px-1">
+                        <SettingsContainer
+                            title="Enable Recording"
+                            description="Whether to record gameplay"
+                        >
+                            <Switch
+                                checked={settings.recording_enabled}
+                                onChecked={(value) =>
+                                    updateSetting("recording_enabled", value)
+                                }
+                            />
+                        </SettingsContainer>
+                    </div>
+                </section>
+
+                <section className="flex flex-col gap-4">
+                    <h3 className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">
+                        Hotkeys
+                    </h3>
+                    <div className="flex flex-col gap-3 px-1">
+                        <SettingsContainer
+                            title="Bookmark Key"
+                            description="Key to press to create a bookmark during recording"
+                        >
+                            <KeybindingInput
+                                value={settings.bookmark_key}
+                                onChange={(key) =>
+                                    updateSetting("bookmark_key", key)
                                 }
                             />
                         </SettingsContainer>
@@ -254,6 +415,48 @@ export default function SettingTab() {
                                 />
                             </SettingsContainer>
                         )}
+                    </div>
+                </section>
+
+                <section className="flex flex-col gap-4">
+                    <h3 className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">
+                        Zipline Uploader
+                    </h3>
+
+                    <div className="flex flex-col gap-3 px-1">
+                        <SettingsContainer
+                            title="Endpoint"
+                            description="Your Zipline endpoint URL"
+                        >
+                            <Input
+                                type="text"
+                                className="w-1/4 bg-mocha-mantle"
+                                value={settings.upload_endpoint || ""}
+                                onChange={(value) =>
+                                    updateSetting(
+                                        "upload_endpoint",
+                                        value || undefined,
+                                    )
+                                }
+                            />
+                        </SettingsContainer>
+
+                        <SettingsContainer
+                            title="Token"
+                            description="Your Zipline token"
+                        >
+                            <Input
+                                type="password"
+                                className="w-1/4 bg-mocha-mantle"
+                                value={settings.upload_token || ""}
+                                onChange={(value) =>
+                                    updateSetting(
+                                        "upload_token",
+                                        value || undefined,
+                                    )
+                                }
+                            />
+                        </SettingsContainer>
                     </div>
                 </section>
             </div>

@@ -4,6 +4,8 @@ a lightweight game clipping\* app for windows and linux
 
 \*the clipping part is coming soon, only records full sessions for now
 
+![clippi screenshot](public/screenshot.png)
+
 ## features
 
 - records game clips using obs

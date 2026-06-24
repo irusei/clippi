@@ -1,26 +1,56 @@
-import { Play, Pencil, Trash } from "lucide-react";
+import { Play, Pencil, Trash, Cloud, Star } from "lucide-react";
 import { VodClip } from "../types";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { formatTime, parseSize } from "../utils";
-import { useState } from "react";
+import { formatTime, formatBytes } from "../utils";
+import { useState, useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import Input from "./ui/Input";
-import LeagueClipCard from "./integration/LeagueClipCard";
+import LeagueClipCard from "./integration/league/LeagueClipCard";
+import { getGameResult } from "../integration/league/LeagueUtils";
 import { confirm } from "@tauri-apps/plugin-dialog";
 
 interface ClipProps {
     clip: VodClip;
-    onClick: () => void;
+    onSelect: (e: React.MouseEvent) => void;
+    isSelected: boolean;
 }
 
-export default function Clip({ clip, onClick }: ClipProps) {
+export default function Clip({ clip, onSelect, isSelected }: ClipProps) {
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [titleInput, setTitleInput] = useState(clip.title);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+
+    useEffect(() => {
+        const unlisten = listen<number>("upload_progress", (event) => {
+            setUploadProgress(event.payload);
+        });
+
+        return () => {
+            unlisten.then((ul) => ul());
+        };
+    }, []);
+
+    let stripColor =
+        clip.integration_result?.type === "LeagueResult"
+            ? getGameResult(clip.integration_result) === "Win"
+                ? "bg-mocha-green"
+                : getGameResult(clip.integration_result) == "Lose"
+                  ? "bg-mocha-red"
+                  : "bg-mocha-overlay1"
+            : undefined;
 
     return (
         <div
-            className="flex flex-row w-full h-24 rounded-md bg-mocha-base border-2 border-mocha-base overflow-hidden hover:cursor-pointer gap-x-4"
-            onClick={onClick}
+            className={`flex flex-row w-full h-24 rounded-md bg-mocha-base overflow-hidden hover:cursor-pointer transition-colors ${
+                isSelected
+                    ? "border-2 border-mocha-mauve"
+                    : "border-2 border-mocha-base"
+            }`}
+            onClick={onSelect}
         >
+            {stripColor && <div className={`w-1 ${stripColor} shrink-0`}></div>}
             <div className="flex flex-row max-w-1/3 min-w-1/3 gap-x-2">
                 <div className="relative w-40 h-full bg-mocha-mantle flex items-center justify-center shrink-0">
                     <img
@@ -90,7 +120,7 @@ export default function Clip({ clip, onClick }: ClipProps) {
 
                     <div className="flex justify-between items-center text-xs text-mocha-overlay2">
                         <div className="flex gap-2">
-                            <p>{parseSize(clip.size)}</p>
+                            <p>{formatBytes(clip.size)}</p>
                             <p>{clip.date}</p>
                         </div>
                     </div>
@@ -104,9 +134,76 @@ export default function Clip({ clip, onClick }: ClipProps) {
                     />
                 )}
             </div>
-            <div className="flex-1 justify-end flex flex-row p-6 items-center">
-                <Trash
-                    className="text-mocha-red w-4 h-4"
+            <div className="flex-1 justify-end flex flex-row p-4 items-center gap-2">
+                <div
+                    className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-mocha-surface0 cursor-pointer"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        invoke("toggle_favorite", { clip });
+                    }}
+                >
+                    <Star
+                        className={`w-5 h-5 ${
+                            clip.favorited
+                                ? "fill-mocha-yellow text-mocha-yellow"
+                                : "text-mocha-text"
+                        }`}
+                    />
+                </div>
+                {clip.remote_path ? (
+                    <div
+                        className="flex items-center gap-1 text-xs text-mocha-green"
+                        title="Already uploaded"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            writeText(clip.remote_path as string);
+                        }}
+                    >
+                        <Cloud className="w-4 h-4" />
+                        <span>Uploaded</span>
+                    </div>
+                ) : (
+                    <>
+                        {isUploading && (
+                            <div className="flex items-center gap-2">
+                                <div className="w-16 h-1.5 bg-mocha-surface0 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-mocha-mauve rounded-full transition-all"
+                                        style={{ width: `${uploadProgress}%` }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        <div
+                            className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-mocha-surface0 cursor-pointer"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (clip.remote_path) return;
+                                setIsUploading(true);
+                                setUploadProgress(0);
+
+                                invoke("upload_clip", { clip })
+                                    .then((res) => {
+                                        writeText(res as string);
+                                        setIsUploading(false);
+                                        setUploadProgress(0);
+                                    })
+                                    .catch((err) => {
+                                        setIsUploading(false);
+                                        setUploadProgress(0);
+                                        alert(err);
+                                    });
+                            }}
+                        >
+                            <Cloud className="w-5 h-5 text-mocha-text" />
+                        </div>
+                    </>
+                )}
+                <div
+                    className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-mocha-surface0 cursor-pointer"
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -117,7 +214,9 @@ export default function Clip({ clip, onClick }: ClipProps) {
                             if (result) invoke("delete_clip", { clip: clip });
                         });
                     }}
-                />
+                >
+                    <Trash className="w-5 h-5 text-mocha-red hover:text-mocha-red/80" />
+                </div>
             </div>
         </div>
     );

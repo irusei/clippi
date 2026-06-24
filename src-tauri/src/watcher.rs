@@ -6,6 +6,14 @@ use std::{
 
 use device_query::{device_state, DeviceQuery, Keycode};
 use serde::Deserialize;
+use std::str::FromStr;
+
+fn parse_bookmark_key(key_str: &str) -> Vec<Keycode> {
+    key_str
+        .split('+')
+        .filter_map(|k| Keycode::from_str(k).ok())
+        .collect()
+}
 
 use crate::{
     announce_current_game,
@@ -17,9 +25,12 @@ use crate::{
     recorder::recorder::{record, RecordingSettings},
     sound,
     storage::{
+        self,
         clips::{store_clip, Bookmark},
+        game_preferences::{self},
         games::DetectedGameData,
         settings::{get_clipping_folder, get_settings},
+        storage_info,
     },
 };
 
@@ -35,6 +46,8 @@ use wmi::WMIConnection;
 pub struct Process {
     pub name: String,
     pub process_id: u32,
+    #[cfg(target_os = "windows")]
+    pub executable_path: Option<String>,
 }
 
 static RECORDING_START_TIME: LazyLock<Mutex<Option<SystemTime>>> =
@@ -85,13 +98,22 @@ pub fn start_input_monitoring() {
 
     thread::spawn(|| {
         let device_state = device_state::DeviceState::new();
-        let mut f8_debounce = false;
+        let mut bookmark_debounce = false;
 
         let mut previous_keys: std::collections::HashSet<Keycode> =
             std::collections::HashSet::new();
         let mut previous_mb: Vec<bool> = Vec::new();
         let mut last_action_push = SystemTime::now();
         let mut actions_this_second = 0;
+
+        let settings = get_settings();
+        let mut bookmark_keys: Vec<Keycode> = parse_bookmark_key(&settings.bookmark_key);
+
+        // avoid bookmark keys being empty
+        // if bookmark_keys is empty, there will be an automatic bookmark every 10ms due to .all() returning true
+        if bookmark_keys.len() == 0 {
+            bookmark_keys = vec![Keycode::F8];
+        }
 
         loop {
             {
@@ -105,14 +127,14 @@ pub fn start_input_monitoring() {
             let keys = device_state.get_keys();
             let mouse_buttons = device_state.get_mouse().button_pressed;
 
-            let f8_down = keys.clone().contains(&Keycode::F8);
+            let bookmark_keys_down = bookmark_keys.iter().all(|k| keys.contains(k));
 
-            if f8_down && !f8_debounce {
-                f8_debounce = true;
+            if bookmark_keys_down && !bookmark_debounce {
+                bookmark_debounce = true;
                 add_bookmark(String::from("BOOKMARK"));
                 let _ = sound::play_sound(std::path::PathBuf::from("./assets/bookmark.wav"));
-            } else if !f8_down && f8_debounce {
-                f8_debounce = false;
+            } else if !bookmark_keys_down && bookmark_debounce {
+                bookmark_debounce = false;
             }
 
             let key_difference = keys
@@ -165,6 +187,9 @@ pub fn handle_process(proc: Process) {
     if is_game {
         // wait for window
         // linux support doesn't have window waiting implemented yet, so we check on a os case basis
+        #[cfg(not(target_os = "windows"))]
+        let titles: Vec<String> = vec![];
+        #[cfg(target_os = "windows")]
         let mut titles: Vec<String> = vec![];
         #[cfg(target_os = "windows")]
         {
@@ -178,15 +203,41 @@ pub fn handle_process(proc: Process) {
                 ),
             }
         }
-
-        println!("FOUND GAME: {}", &filename);
         if let Some(detected_game) = detector::get_detected_game(&filename, &titles) {
+            // check global recording toggle
+            let settings = get_settings();
+            if !settings.recording_enabled {
+                return;
+            }
+
+            // check per-game toggle
+            let preferences = game_preferences::get_game_preference(&detected_game.name);
+            if !preferences.enabled {
+                return;
+            }
+
+            // check storage limits
+            if storage::settings::is_over_limit(storage_info::calculate_clips_size()) {
+                return;
+            }
+
+            // must do this as roblox's systray crashes the whole recorder
+            #[cfg(target_os = "windows")]
+            if filename == "RobloxPlayerBeta.exe"
+                && titles.first().unwrap_or(&String::new()) != "Roblox"
+            {
+                return;
+            }
+
             let w_name = filename.clone();
 
-            let settings = get_settings();
+            let game_resolution = preferences
+                .resolution_x_override
+                .zip(preferences.resolution_y_override);
 
             let recorder_settings = RecordingSettings {
                 resolution: settings.resolution,
+                game_resolution,
                 framerate: settings.framerate,
                 bitrate: settings.bitrate,
                 folder: get_clipping_folder(),
@@ -197,7 +248,6 @@ pub fn handle_process(proc: Process) {
                 capture_mic: settings.capture_mic,
             };
 
-            let w_name = w_name.clone();
             let recorder_settings = recorder_settings.clone();
             let detected_game_cloned = detected_game.clone();
 
@@ -216,22 +266,19 @@ pub fn handle_process(proc: Process) {
             // start input monitoring before recording begins
             start_input_monitoring();
 
-            if let Err(e) = record(
-                w_name,
-                &detected_game,
-                recorder_settings,
-                Box::new(move |clip_path| {
-                    thread::sleep(Duration::from_secs(1));
-                    let bookmarks = get_current_bookmarks();
-                    let action_count = get_action_count();
+            let recorder_result = record(w_name, &detected_game, recorder_settings);
+            let bookmarks = get_current_bookmarks();
+            let action_count = get_action_count();
 
-                    set_current_game(None);
-                    set_recording_start_time(None);
-                    announce_current_game(None);
-                    stop_input_monitoring();
-                    let integration_result = stop_integration();
-                    rpc::clear_activity();
+            set_current_game(None);
+            set_recording_start_time(None);
+            announce_current_game(None);
+            stop_input_monitoring();
+            let integration_result = stop_integration();
+            rpc::clear_activity();
 
+            match recorder_result {
+                Ok(clip_path) => {
                     store_clip(
                         crate::storage::clips::ClipType::Recording,
                         clip_path,
@@ -240,16 +287,10 @@ pub fn handle_process(proc: Process) {
                         action_count,
                         integration_result,
                     );
-                }),
-            ) {
-                eprintln!("An error occurred while recording: {:?}", e);
-
-                set_current_game(None);
-                set_recording_start_time(None);
-                announce_current_game(None);
-                stop_input_monitoring();
-                stop_integration();
-                rpc::clear_activity();
+                }
+                Err(e) => {
+                    eprintln!("An error occurred while recording: {:?}", e.to_string());
+                }
             }
         }
     }

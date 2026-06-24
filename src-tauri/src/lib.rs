@@ -14,8 +14,10 @@ use crate::{
     integrations::discord::rpc,
     storage::{
         clips::{clean_path, prefix_path, Clip},
+        game_preferences::{self as game_pref_storage, GamePreference},
         games::DetectedGameData,
         settings::{get_clipping_folder, Settings},
+        storage_info::StorageInfo,
     },
 };
 
@@ -28,6 +30,7 @@ pub mod platform_utils;
 pub mod recorder;
 pub mod sound;
 pub mod storage;
+pub mod uploader;
 pub mod watcher;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -162,6 +165,16 @@ fn edit_game(old_game: DetectedGameData, new_game: DetectedGameData) {
 }
 
 #[tauri::command]
+fn get_game_preference(game_name: String) -> GamePreference {
+    game_pref_storage::get_game_preference(&game_name)
+}
+
+#[tauri::command]
+fn set_game_preference(game_name: String, preferences: GamePreference) {
+    game_pref_storage::set_game_preference(&game_name, preferences);
+}
+
+#[tauri::command]
 fn list_processes() -> Vec<String> {
     platform_utils::list_processes()
 }
@@ -174,6 +187,21 @@ fn rename_clip(clip: Clip, new_title: String) {
 #[tauri::command]
 fn get_current_game() -> Option<DetectedGameData> {
     watcher::get_current_game()
+}
+
+#[tauri::command]
+fn get_storage_info() -> StorageInfo {
+    storage::storage_info::get_storage_info()
+}
+
+#[tauri::command]
+async fn upload_clip(clip: Clip, app: tauri::AppHandle) -> Result<String, String> {
+    storage::clips::upload_clip(app, clip).await
+}
+
+#[tauri::command]
+fn toggle_favorite(clip: Clip) {
+    storage::clips::toggle_favorite(clip);
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -238,12 +266,14 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(tauri::generate_handler![
             get_clips,
             open_clip_in_explorer,
             trim_clip,
             delete_clip,
             rename_clip,
+            toggle_favorite,
             get_settings,
             set_settings,
             get_games,
@@ -252,6 +282,10 @@ pub fn run() {
             edit_game,
             get_current_game,
             list_processes,
+            get_game_preference,
+            set_game_preference,
+            get_storage_info,
+            upload_clip,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

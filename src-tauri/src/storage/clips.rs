@@ -11,7 +11,8 @@ use crate::{
     ffmpeg::{self, ffprobe},
     integrations::game::events::GameIntegrationResult,
     send_clips,
-    storage::{games::DetectedGameData, settings::get_clipping_folder},
+    storage::{self, games::DetectedGameData, settings::get_clipping_folder},
+    uploader,
 };
 
 #[derive(Serialize, Deserialize, Clone, Default)]
@@ -51,6 +52,10 @@ pub struct Clip {
     pub date: String,
     #[serde(default)]
     pub integration_result: Option<Box<dyn GameIntegrationResult>>,
+    #[serde(default)]
+    pub remote_path: Option<String>,
+    #[serde(default)]
+    pub favorited: bool,
 }
 
 static CLIPS: LazyLock<Mutex<Vec<Clip>>> = LazyLock::new(|| Mutex::new(load_from_file()));
@@ -132,6 +137,9 @@ pub fn store_clip(
     action_count: Vec<usize>,
     integration_result: Option<Box<dyn GameIntegrationResult>>,
 ) {
+    let clip_name = integration_result
+        .as_ref()
+        .and_then(|r| r.clip_name());
     // prepare move
     let clip_filename = clip_path.file_name().expect("Failed to get filename?");
     let mut new_path = get_clipping_folder();
@@ -169,7 +177,7 @@ pub fn store_clip(
             id: uuid::Uuid::new_v4(),
             clip_type: clip_type,
             path: clean_path(&new_path.to_string_lossy().to_string()),
-            title: format!("{} VOD", &game_data.name),
+            title: clip_name.unwrap_or_else(|| format!("{} VOD", &game_data.name)),
             duration: duration,
             game: game_data,
             size: file_size,
@@ -178,6 +186,8 @@ pub fn store_clip(
             action_count: action_count,
             date: chrono::Local::now().format("%Y-%m-%d %H:%M").to_string(),
             integration_result: integration_result,
+            remote_path: None,
+            favorited: false,
         });
     }
     save_to_file();
@@ -239,6 +249,8 @@ pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData, action_co
                 action_count: action_count,
                 date: chrono::Local::now().format("%Y-%m-%d %H:%M").to_string(),
                 integration_result: None, // TODO: make this stay
+                remote_path: None,
+                favorited: false,
             });
         }
         save_to_file();
@@ -260,6 +272,38 @@ pub fn delete_clip(clip: Clip) {
     save_to_file();
 }
 
+pub async fn upload_clip(app: tauri::AppHandle, clip: Clip) -> Result<String, String> {
+    let settings = storage::settings::get_settings();
+
+    let endpoint = settings
+        .upload_endpoint
+        .as_ref()
+        .ok_or_else(|| "No upload endpoint configured".to_string())?;
+    let token = settings
+        .upload_token
+        .as_ref()
+        .ok_or_else(|| "No upload token configured".to_string())?;
+
+    let full_path_buf = PathBuf::from(&clip.path);
+
+    let remote_url = uploader::upload_clip(app, endpoint, token, &full_path_buf)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // update clip with remote_path
+    {
+        let mut clips = CLIPS.lock().unwrap();
+        for c in clips.iter_mut() {
+            if c.id == clip.id {
+                c.remote_path = Some(remote_url.clone());
+                break;
+            }
+        }
+    }
+    save_to_file();
+
+    Ok(remote_url)
+}
 pub fn get_clips() -> Vec<Clip> {
     let clips_locked = CLIPS.lock().unwrap();
     let cc = &*clips_locked;
@@ -277,6 +321,19 @@ pub fn rename_clip(clip: Clip, new_title: String) {
         for c in clips.iter_mut() {
             if c.id == clip.id {
                 c.title = new_title;
+                break;
+            }
+        }
+    }
+    save_to_file();
+}
+
+pub fn toggle_favorite(clip: Clip) {
+    {
+        let mut clips = CLIPS.lock().unwrap();
+        for c in clips.iter_mut() {
+            if c.id == clip.id {
+                c.favorited = !c.favorited;
                 break;
             }
         }

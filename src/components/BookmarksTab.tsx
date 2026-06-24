@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Filter } from "lucide-react";
 import { VodClip } from "../types";
-import { getMarkerData } from "./MarkerData";
+import { getMarkerData } from "../integration/MarkerData";
 import { formatTime } from "../utils";
 
 type FilterMode = "all" | "bookmarks" | "game";
@@ -70,6 +70,7 @@ export default function BookmarksTab({
                     {filteredEntries.map((marker, index) => (
                         <button
                             key={index}
+                            title={marker.label}
                             className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-mocha-surface0/50 transition-colors text-left"
                             onClick={() => onSeek(marker.time)}
                         >

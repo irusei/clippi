@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { DetectedGame, VodClip } from "../types";
+import { DetectedGame, Settings, StorageInfo, VodClip } from "../types";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import Clip from "../components/Clip";
@@ -7,9 +7,10 @@ import ClipViewer from "../components/ClipViewer";
 import { FilterMenu } from "../components/FilterMenu";
 import { filterClips } from "../utils/filterClips";
 import { FilterOptions } from "../types";
-import { parseSize } from "../utils";
-import { platform } from "@tauri-apps/plugin-os";
 import { Select } from "../components/ui/Select";
+import { isOverStorageLimit } from "../utils";
+import { AlertCircle, Trash2, Star, X } from "lucide-react";
+import { confirm } from "@tauri-apps/plugin-dialog";
 
 function getSortedUniqueGames(clips: VodClip[]): [DetectedGame, number][] {
     let sortedGames: Map<string, [DetectedGame, number]> = new Map();
@@ -29,6 +30,12 @@ function getSortedUniqueGames(clips: VodClip[]): [DetectedGame, number][] {
 export default function ClipTab() {
     const [clips, setClips] = useState<VodClip[]>([]);
     const [selectedClip, setSelectedClip] = useState<VodClip | null>(null);
+    const [selectedClipIds, setSelectedClipIds] = useState<Set<string>>(
+        new Set(),
+    );
+    const [lastSelectedClipId, setLastSelectedClipId] = useState<string | null>(
+        null,
+    );
     const [uniqueGames, setUniqueGames] = useState<[DetectedGame, number][]>(
         [],
     );
@@ -36,45 +43,136 @@ export default function ClipTab() {
     const [filterOptions, setFilterOptions] = useState<FilterOptions>({
         type: "",
     });
+    const [favoritedOnly, setFavoritedOnly] = useState(false);
+    const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
+    const [maxStorageLimit, setMaxStorageLimit] = useState<string>("unlimited");
 
-    // runs on trim, sets clip to trim
-    function setSelectedClipToLastClip() {
-        invoke("get_clips").then((res) => {
-            let clips = res as VodClip[];
-            setClips(clips);
-            setSelectedClip(clips[0]);
-        });
-    }
+    const isStorageLimitReached =
+        storageInfo &&
+        isOverStorageLimit(storageInfo.clips_size, maxStorageLimit);
 
-    function _setSelectedClip(clip: VodClip) {
-        if (platform() === "windows") setSelectedClip(clip);
-        else
-            alert(
-                "unfortunately due to tauri requiring a merged PR (#14402) clip playback isn't really possible atm, this will be fixed when this gets hopefully merged",
-            );
-    }
     function getClips() {
         invoke("get_clips").then((res) => {
             setClips(res as VodClip[]);
+            if (selectedClip == null) return;
+            for (const clip of res as VodClip[]) {
+                if (clip.id === selectedClip?.id) {
+                    setSelectedClip(clip);
+                    break;
+                }
+            }
         });
+    }
+
+    function handleClipClick(
+        clip: VodClip,
+        event: React.MouseEvent,
+        index: number,
+    ) {
+        const filteredClips = filterClips(
+            clips,
+            selectedGameName,
+            filterOptions,
+        );
+
+        if (event.shiftKey && lastSelectedClipId != null) {
+            const lastIdx = filteredClips.findIndex(
+                (c) => c.id === lastSelectedClipId,
+            );
+            if (lastIdx !== -1) {
+                const start = Math.min(lastIdx, index);
+                const end = Math.max(lastIdx, index);
+                const newSelected = new Set(selectedClipIds);
+                for (let i = start; i <= end; i++) {
+                    newSelected.add(filteredClips[i].id);
+                }
+                setSelectedClipIds(newSelected);
+            }
+        } else if (event.ctrlKey) {
+            const newSelected = new Set(selectedClipIds);
+            if (newSelected.has(clip.id)) {
+                newSelected.delete(clip.id);
+            } else {
+                newSelected.add(clip.id);
+            }
+            setSelectedClipIds(newSelected);
+            setLastSelectedClipId(clip.id);
+        } else {
+            setSelectedClip(clip);
+        }
+    }
+
+    async function handleDeleteSelected() {
+        const confirmed = await confirm(
+            `Delete ${selectedClipIds.size} clip${selectedClipIds.size > 1 ? "s" : ""}?`,
+        );
+        if (!confirmed) return;
+
+        for (const clipId of selectedClipIds) {
+            const clip = clips.find((c) => c.id === clipId);
+            if (clip) {
+                await invoke("delete_clip", { clip });
+            }
+        }
+
+        setSelectedClipIds(new Set());
     }
 
     // set and update unique games for filtering
     useEffect(() => {
         setUniqueGames(getSortedUniqueGames(clips));
+
+        // update storage limit in case settings change
+        const ul1 = listen("settings_updated", () => {
+            invoke("get_storage_info").then((res) => {
+                setStorageInfo(res as StorageInfo);
+            });
+            invoke("get_settings").then((res) => {
+                const settings = res as Settings;
+                setMaxStorageLimit(settings.max_storage_limit as string);
+            });
+        });
+
+        invoke("get_storage_info").then((res) => {
+            setStorageInfo(res as StorageInfo);
+        });
+        invoke("get_settings").then((res) => {
+            const settings = res as Settings;
+            setMaxStorageLimit(settings.max_storage_limit as string);
+        });
+
+        return () => {
+            ul1.then((ul) => ul());
+        };
     }, [clips]);
 
     useEffect(() => {
-        const ul = listen("set_clips", (event) => {
+        const ul1 = listen("set_clips", (event) => {
             setClips(event.payload as VodClip[]);
+        });
+
+        const ul2 = listen("show_trimmed_clip", () => {
+            invoke("get_clips").then((res) => {
+                let clips = res as VodClip[];
+                setClips(clips);
+                setSelectedClip(clips[0]);
+            });
         });
 
         getClips();
 
         return () => {
-            ul.then((ul) => ul());
+            ul1.then((ul) => ul());
+            ul2.then((ul) => ul());
         };
     }, []);
+
+    const filteredClips = filterClips(
+        clips,
+        selectedGameName,
+        filterOptions,
+        favoritedOnly,
+    );
 
     return (
         <div className="bg-mocha-mantle w-full h-full">
@@ -85,25 +183,13 @@ export default function ClipTab() {
                             <h2 className="text-3xl font-semibold text-mocha-text mb-2">
                                 Your clips
                             </h2>
-                            {clips.length > 0 && (
-                                <h2 className="text-lg font-semibold text-mocha-overlay1 mb-2 text-center">
-                                    {parseSize(
-                                        clips
-                                            .map((clip) => clip.size)
-                                            .reduce(
-                                                (total_size, cur_size) =>
-                                                    total_size + cur_size,
-                                            ),
-                                    )}
-                                </h2>
-                            )}
                         </div>
                         <label className="text-sm font-medium text-mocha-overlay2">
                             Filter
                         </label>
                         <div className="flex flex-row gap-x-3 items-center w-full">
                             <Select
-                                className="w-1/4"
+                                className="w-1/4 bg-mocha-base"
                                 value={selectedGameName}
                                 placeholderValue={"Filter games..."}
                                 selectedLabel={
@@ -162,18 +248,75 @@ export default function ClipTab() {
                                 setFilterOptions={setFilterOptions}
                                 clips={clips}
                             />
+                            <button
+                                className={`flex items-center gap-1 px-3 py-2 text-sm rounded-lg font-medium transition-colors ${
+                                    favoritedOnly
+                                        ? "bg-mocha-yellow/20 text-mocha-yellow"
+                                        : "text-mocha-overlay2 hover:bg-mocha-surface0"
+                                }`}
+                                onClick={() => setFavoritedOnly(!favoritedOnly)}
+                            >
+                                <Star
+                                    className={`w-4 h-4 ${favoritedOnly ? "fill-mocha-yellow" : ""}`}
+                                />
+                                <p>Favorited</p>
+                            </button>
                         </div>
 
+                        {isStorageLimitReached && (
+                            <div className="flex items-center gap-3 px-4 py-3 border border-mocha-red rounded-lg">
+                                <AlertCircle className="w-5 h-5 text-mocha-red" />
+                                <div>
+                                    <p className="text-sm font-medium text-mocha-red">
+                                        Storage limit reached
+                                    </p>
+                                    <p className="text-xs text-mocha-red">
+                                        You cannot record clips until you free
+                                        up space or increase your storage limit
+                                        in settings.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {selectedClipIds.size > 0 && (
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm text-mocha-overlay1 py-2 font-medium">
+                                    {selectedClipIds.size} clip
+                                    {selectedClipIds.size !== 1 ? "s" : ""}{" "}
+                                    selected
+                                </p>
+                                <div className="flex flex-row">
+                                    <button
+                                        className="flex items-center gap-2 px-3 py-2 text-sm text-mocha-overlay2 hover:bg-mocha-overlay2/10 transition-colors rounded-lg font-medium"
+                                        onClick={() => {
+                                            setSelectedClipIds(new Set());
+                                            setLastSelectedClipId(null);
+                                        }}
+                                    >
+                                        <X className="w-4 h-4" />
+                                        Deselect all
+                                    </button>
+                                    <button
+                                        className="flex items-center gap-2 px-3 py-2 text-sm text-mocha-red hover:bg-mocha-red/10 transition-colors rounded-lg font-medium"
+                                        onClick={handleDeleteSelected}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <div className={"flex flex-col gap-3"}>
-                            {filterClips(
-                                clips,
-                                selectedGameName,
-                                filterOptions,
-                            ).map((clip) => (
+                            {filteredClips.map((clip, index) => (
                                 <Clip
                                     key={clip.id}
                                     clip={clip}
-                                    onClick={() => _setSelectedClip(clip)}
+                                    isSelected={selectedClipIds.has(clip.id)}
+                                    onSelect={(e) =>
+                                        handleClipClick(clip, e, index)
+                                    }
                                 />
                             ))}
                         </div>
@@ -185,7 +328,7 @@ export default function ClipTab() {
                 <ClipViewer
                     clip={selectedClip}
                     onExitClip={() => setSelectedClip(null)}
-                    setSelectedClipToLastClip={setSelectedClipToLastClip}
+                    reloadClips={getClips}
                 />
             )}
         </div>

@@ -1,4 +1,11 @@
+import { KovaaKsResult } from "./integration/kovaaks/KovaaksTypes";
 import { LeagueResult } from "./integration/league/LeagueTypes";
+
+export interface GamePreference {
+    enabled: boolean;
+    resolution_x_override: number | null;
+    resolution_y_override: number | null;
+}
 
 export interface DetectedGame {
     name: string;
@@ -25,13 +32,15 @@ export interface VodClip {
     action_count: number[];
     date: string;
     integration_result: Result | null;
+    remote_path: string | null;
+    favorited: boolean;
 }
 
 export type BaseResult = {
     type: string;
 };
 
-export type Result = LeagueResult;
+export type Result = LeagueResult | KovaaKsResult;
 
 export type ClipType = "Recording" | "Clip";
 export type VodEncoder = "X264" | "H264" | "HEVC" | "AV1";
@@ -46,6 +55,11 @@ export interface Settings {
     capture_mic: boolean;
     discord_rpc_enabled: boolean;
     windows_autostart: boolean;
+    bookmark_key: string;
+    recording_enabled: boolean;
+    max_storage_limit: string;
+    upload_endpoint?: string | null;
+    upload_token?: string | null;
 }
 
 export type BaseFilter = {
@@ -59,3 +73,11 @@ export type LeagueFilter = BaseFilter & {
 };
 
 export type FilterOptions = BaseFilter | LeagueFilter;
+
+export interface StorageInfo {
+    clipping_folder: string;
+    total_space: number;
+    free_space: number;
+    used_space: number;
+    clips_size: number;
+}

@@ -36,6 +36,7 @@ sysinfo = "0.39.2"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"
+fs2 = "0.4"
 
 [dependencies]
 tauri = { version = "2", features = ["protocol-asset", "tray-icon", "image-png"] }
@@ -57,7 +58,10 @@ discord-rich-presence = "1.1.0"
 rodio = "0.22.2"
 chrono = "0.4"
 tauri-plugin-os = "2"
-reqwest = { version = "0.13.4", features = ["json", "blocking"] }
+reqwest = { version = "0.13.4", features = ["json", "blocking", "multipart", "stream"] }
 typetag = "0.2.22"
 dyn-clone = "1.0.20"
 tauri-plugin-dialog = "2"
+tauri-plugin-clipboard-manager = "2"
+tokio-util = "0.7.18"
+futures-util = "0.3.32"

@@ -47,6 +47,14 @@ export function Select({
             }
         }
 
+        // validate select options
+        if (
+            options &&
+            options.length > 0 &&
+            !options.find((opt) => opt[1] == value)
+        ) {
+            onChange?.(options[0][1]);
+        }
         document.addEventListener("mousedown", handleClickOutside);
         return () =>
             document.removeEventListener("mousedown", handleClickOutside);
@@ -88,12 +96,12 @@ export function Select({
 
     return (
         <div
-            className={clsx("relative transition-all", className)}
+            className={clsx("relative transition-all rounded-lg", className)}
             ref={containerRef}
         >
             <div
                 className={clsx(
-                    "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-mocha-base cursor-pointer transition-all",
+                    "w-full flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all",
                     disabled
                         ? "opacity-50 pointer-events-none outline-none"
                         : "hover:border-mocha-mauve focus-within:ring-1 focus-within:ring-mocha-mauve/50",
@@ -117,7 +125,12 @@ export function Select({
                     </div>
                 ) : (
                     <input
-                        value={value || ""}
+                        value={
+                            options
+                                ? (options.find((x) => x[1] == value)! ??
+                                      [])[0] || ""
+                                : ""
+                        }
                         readOnly
                         placeholder={placeholderValue || "Select an option"}
                         className="w-full bg-transparent text-mocha-text focus:outline-none"

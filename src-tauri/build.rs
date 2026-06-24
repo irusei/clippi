@@ -23,6 +23,7 @@ fn main() {
     // fix app requiring dependencies on npm run tauri dev
     let second_dest_exe = Path::new("target/debug/installer.exe");
 
+    fs::create_dir_all(second_dest_exe.parent().unwrap()).unwrap();
     fs::copy(&target_exe, &second_dest_exe)
         .unwrap_or_else(|e| panic!("failed to copy installer.exe: {}", e));
 

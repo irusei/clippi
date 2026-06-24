@@ -7,9 +7,41 @@
         "title_regex": []
     },
     {
+        "name": "Assetto Corsa",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/244210/c35922c480816b55f18b2843c6d838ccbc8ff825.jpg",
+        "executables": ["acs.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Assetto Corsa Competizione",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/805550/413dfe7829dd6e2776b7daef24c45b6f8f1f9ae5.jpg",
+        "executables": ["AC2-Win64-Shipping.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Assetto Corsa Rally",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/3917090/d1560174004949065d7d1b0d1e4a2202647ce756.jpg",
+        "executables": ["acr.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
         "name": "Balatro",
         "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/2379780/b6018068070ab0e23561694c11f7950dd6f4c752.jpg",
         "executables": ["Balatro.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "BeamNG.drive",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/284160/34f8997c32b2f463caf2014aab4a95109a896ecc.jpg",
+        "executables": [
+            "BeamNG.drive.x86.exe",
+            "BeamNG.drive.x64.exe",
+            "BeamNG.drive.exe"
+        ],
         "use_window_capture": false,
         "title_regex": []
     },
@@ -31,7 +63,7 @@
         "name": "Counter-Strike 2",
         "icon": "https://cdn2.steamgriddb.com/icon/01063bcf7624297fbb408495bcb62904/8/512x512.png",
         "executables": ["cs2.exe"],
-        "use_window_capture": false,
+        "use_window_capture": true,
         "title_regex": []
     },
     {
@@ -59,6 +91,13 @@
         "name": "Far Far West",
         "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/3124540/a0a5e461c215c2a8916f42111ce41fa887cbec71.jpg",
         "executables": ["FarFarWest-Win64-Shipping.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Fortnite",
+        "icon": "https://upload.wikimedia.org/wikipedia/commons/7/7c/Fortnite_F_lettermark_logo.png",
+        "executables": ["FortniteClient-Win64-Shipping.exe"],
         "use_window_capture": false,
         "title_regex": []
     },
@@ -105,6 +144,13 @@
         "title_regex": []
     },
     {
+        "name": "Lethal Company",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/1966720/80d2453285274e4723c884a671cdd3f8fe2f766f.jpg",
+        "executables": ["Lethal Company.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
         "name": "Marvel Rivals",
         "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/2767030/839b4712925b95702ca56e0c4d399adf54f4d617.jpg",
         "executables": ["Marvel-Win64-Shipping.exe"],
@@ -140,9 +186,23 @@
         "title_regex": []
     },
     {
+        "name": "osu!",
+        "icon": "https://i.ppy.sh/8da5c58fe05c929645ad387fafae112e3b70ef80/68747470733a2f2f65787465726e616c2d707265766965772e726564642e69742f616c676a48657372414533495278716174494750667442694b4d586e30454d624d6d563245766d6f466c382e706e673f6175746f3d7765627026733d61383035653561306563363737643638613661363764613964653435323063323962336261623866",
+        "executables": ["osu!.exe", "osu!"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
         "name": "Overwatch",
         "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/2357570/da42bd294c941d5947b1bc2c2b2efa1313d36a91.jpg",
         "executables": ["Overwatch.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "PEAK",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/3527290/b3a992fd5991bd2f4c956d58e062b0ce2988d6cd.jpg",
+        "executables": ["PEAK.exe"],
         "use_window_capture": false,
         "title_regex": []
     },
@@ -154,10 +214,31 @@
         "title_regex": []
     },
     {
+        "name": "R.E.P.O",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/3241660/b8bf4770408fc369e15cebd42e0026a27b67aaa8.jpg",
+        "executables": ["REPO.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
         "name": "ROBLOX",
         "icon": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxYVDrhjJrGwHDVxoorqZpr759y3NqPe4EOA&s",
         "executables": ["RobloxPlayerBeta.exe"],
         "use_window_capture": true,
+        "title_regex": []
+    },
+    {
+        "name": "Rocket League",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/252950/9ad6dd3d173523354385955b5fb2af87639c4163.jpg",
+        "executables": ["RocketLeague.exe"],
+        "use_window_capture": false,
+        "title_regex": []
+    },
+    {
+        "name": "Rust",
+        "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/252490/820be4782639f9c4b64fa3ca7e6c26a95ae4fd1c.jpg",
+        "executables": ["RustClient.exe"],
+        "use_window_capture": false,
         "title_regex": []
     },
     {
