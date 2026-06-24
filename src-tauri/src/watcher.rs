@@ -193,7 +193,7 @@ pub fn handle_process(proc: Process) {
         let mut titles: Vec<String> = vec![];
         #[cfg(target_os = "windows")]
         {
-            match wait_for_window(&filename, 45) {
+            match wait_for_window(&filename, 1) {
                 Ok(_) => {
                     titles = get_titles(proc.process_id);
                 }
