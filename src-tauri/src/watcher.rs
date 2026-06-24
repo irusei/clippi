@@ -221,6 +221,14 @@ pub fn handle_process(proc: Process) {
                 return;
             }
 
+            // must do this as roblox's systray crashes the whole recorder
+            #[cfg(target_os = "windows")]
+            if filename == "RobloxPlayerBeta.exe"
+                && titles.first().unwrap_or(&String::new()) != "Roblox"
+            {
+                return;
+            }
+
             let w_name = filename.clone();
 
             let game_resolution = preferences

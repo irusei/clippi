@@ -226,8 +226,7 @@ pub fn record(
             .create_updater()?
             .set_window_raw(&*window.obs_id)
             .set_capture_method(ObsWindowCaptureMethod::MethodWgc)
-            .set_capture_audio(!settings.capture_desktop_audio)
-            .unwrap()
+            .set_capture_audio(!settings.capture_desktop_audio)?
             .update()?;
 
         let item = scene.add_source(source)?;
@@ -243,8 +242,7 @@ pub fn record(
         source
             .create_updater()?
             .set_window_raw(&*window.obs_id)
-            .set_capture_audio(!settings.capture_desktop_audio)
-            .unwrap()
+            .set_capture_audio(!settings.capture_desktop_audio)?
             .set_anti_cheat_hook(true)
             .update()?;
 
@@ -260,9 +258,7 @@ pub fn record(
             )?
             .build()?;
 
-        scene
-            .add_source(mic_source)
-            .expect("failed to add mic source");
+        scene.add_source(mic_source)?;
     }
 
     // create desktop audio source
@@ -273,9 +269,7 @@ pub fn record(
             )?
             .build()?;
 
-        scene
-            .add_source(desktop_audio_source)
-            .expect("failed to add desktop audio source");
+        scene.add_source(desktop_audio_source)?;
     }
 
     let mut output_builder = ctx
