@@ -8,6 +8,7 @@ import { Select } from "../components/ui/Select";
 import { KeybindingInput } from "../components/ui/KeybindingInput";
 import { platform } from "@tauri-apps/plugin-os";
 import { Folder, HardDrive } from "lucide-react";
+import { Disclaimer } from "../components/ui/Disclaimer";
 import { open } from "@tauri-apps/plugin-dialog";
 import { formatBytes } from "../utils";
 import { emit, listen } from "@tauri-apps/api/event";
@@ -255,6 +256,11 @@ export default function SettingTab() {
                                 </div>
                             </div>
                         )}
+
+                        <Disclaimer
+                            title="Use a dedicated folder for your clips"
+                            description="Set your clip location to a folder that is meant only for clippi. On app startup, all recordings that aren't used by clippi are automatically deleted to clean up storage. Do not point to a folder with important videos."
+                        />
 
                         <SettingsContainer
                             title="Save Location"
