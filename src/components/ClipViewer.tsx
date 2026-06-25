@@ -11,15 +11,12 @@ import {
     ChevronRight,
     Scissors,
     VolumeOff,
-    Pencil,
     PanelRightOpen,
-    Cloud,
 } from "lucide-react";
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { emit, listen } from "@tauri-apps/api/event";
 import { formatTime, smooth } from "../utils";
-import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-import TimelineMarker from "./TimelineMarker";
+import TimelineMarker from "./viewer/TimelineMarker";
 import {
     Line,
     LineChart,
@@ -28,11 +25,13 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
-import Input from "./ui/Input";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { platform } from "@tauri-apps/plugin-os";
-import RightPanel from "./RightPanel";
+import RightPanel from "./viewer/RightPanel";
 import { getMarkerData } from "../integration/MarkerData";
+import SpeedAdjustment from "./viewer/SpeedAdjustment";
+import UploadButton from "./viewer/UploadButton";
+import Title from "./viewer/Title";
 
 interface ClipViewerProps {
     clip: VodClip;
@@ -54,22 +53,9 @@ export default function ClipViewer({
     const [trimRight, setTrimRight] = useState<number>(clip.duration);
     const [isDragging, setIsDragging] = useState<"left" | "right" | null>(null);
     const [volume, setVolume] = useState(1);
-    const [isEditingTitle, setIsEditingTitle] = useState(false);
-    const [titleInput, setTitleInput] = useState(clip.title);
     const [mouseDown, setMouseDown] = useState(false);
     const [showRightPanel, setShowRightPanel] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
-
-    useEffect(() => {
-        const unlisten = listen<number>("upload_progress", (event) => {
-            setUploadProgress(event.payload);
-        });
-
-        return () => {
-            unlisten.then((ul) => ul());
-        };
-    }, []);
+    const [playbackSpeed, setPlaybackSpeed] = useState(1);
 
     const handleMouseMove = useCallback(
         (e: MouseEvent) => {
@@ -97,8 +83,6 @@ export default function ClipViewer({
         setTrimLeft(0);
         setTrimRight(clip.duration);
         setIsDragging(null);
-        setTitleInput(clip.title);
-        setIsEditingTitle(false);
         setMouseDown(false);
 
         const unlisten = listen("tauri://resize", () => {
@@ -193,94 +177,10 @@ export default function ClipViewer({
                         className="w-5 h-5 hover:text-mocha-lavender cursor-pointer"
                         onClick={onExitClip}
                     />
-                    {isEditingTitle ? (
-                        <Input
-                            type="text"
-                            value={titleInput}
-                            onChange={(value) => setTitleInput(value)}
-                            onBlur={() => {
-                                if (titleInput !== clip.title) {
-                                    invoke("rename_clip", {
-                                        clip,
-                                        newTitle: titleInput.trim(),
-                                    });
-                                }
-                                setIsEditingTitle(false);
-                            }}
-                            onKeyDown={(key) => {
-                                if (key === "Enter") {
-                                    if (titleInput !== clip.title) {
-                                        invoke("rename_clip", {
-                                            clip,
-                                            newTitle: titleInput.trim(),
-                                        });
-                                    }
-                                    setIsEditingTitle(false);
-                                }
-                            }}
-                            className="w-100"
-                            autoFocus={true}
-                        />
-                    ) : (
-                        <div
-                            className="flex items-center gap-2 cursor-pointer group"
-                            onClick={() => setIsEditingTitle(true)}
-                        >
-                            <p className="font-medium">{titleInput}</p>
-                            <Pencil className="w-3.5 h-3.5 opacity-0 group-hover:opacity-50 transition-opacity" />
-                        </div>
-                    )}
+                    <Title clip={clip} />
                 </div>
                 <div className="flex items-center gap-2 pointer-events-auto">
-                    {clip.remote_path ? (
-                        <div
-                            className="flex items-center justify-center w-10 h-10 opacity-100 text-mocha-green cursor-pointer"
-                            title="Already uploaded"
-                            onClick={() =>
-                                writeText(clip.remote_path as string)
-                            }
-                        >
-                            <Cloud className="w-5 h-5" />
-                        </div>
-                    ) : (
-                        <>
-                            {isUploading && (
-                                <div className="flex items-center gap-1">
-                                    <div className="w-12 h-1 bg-mocha-surface0 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-mocha-mauve rounded-full transition-all"
-                                            style={{
-                                                width: `${uploadProgress}%`,
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                            <div
-                                className="flex items-center justify-center w-10 h-10 opacity-100 hover:text-mocha-lavender cursor-pointer"
-                                onClick={() => {
-                                    if (clip.remote_path) return;
-                                    setIsUploading(true);
-                                    setUploadProgress(0);
-
-                                    invoke("upload_clip", { clip })
-                                        .then((res) => {
-                                            writeText(res as string);
-                                            setIsUploading(false);
-                                            setUploadProgress(0);
-                                            reloadClips();
-                                        })
-                                        .catch((err) => {
-                                            setIsUploading(false);
-                                            setUploadProgress(0);
-                                            alert(err);
-                                        });
-                                }}
-                            >
-                                <Cloud className="w-5 h-5" />
-                            </div>
-                        </>
-                    )}
+                    <UploadButton clip={clip} reloadClips={reloadClips} />
                     <div
                         className="flex items-center justify-center w-10 h-10 opacity-100 hover:text-mocha-lavender cursor-pointer"
                         onClick={() =>
@@ -395,6 +295,13 @@ export default function ClipViewer({
                         </div>
 
                         <div className="flex items-center gap-4">
+                            <SpeedAdjustment
+                                currentPlaybackSpeed={playbackSpeed}
+                                onSpeedChange={(newSpeed: number) => {
+                                    setPlaybackSpeed(newSpeed);
+                                    playerRef.current!.playbackRate = newSpeed;
+                                }}
+                            />
                             <Maximize
                                 className="w-5 h-5 cursor-pointer"
                                 onClick={() => {

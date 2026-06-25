@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { VodClip } from "../types";
-import BookmarksTab from "./BookmarksTab";
-import LeagueScoreboardTab from "./integration/league/LeagueScoreboardTab";
-import { LeagueResult } from "../integration/league/LeagueTypes";
+import { VodClip } from "../../types";
+import BookmarksTab from "./panel/BookmarksTab";  
+import LeagueScoreboardTab from "../integration/league/LeagueScoreboardTab";
+import { LeagueResult } from "../../integration/league/LeagueTypes";
 
 interface RightPanelProps {
     clip: VodClip;

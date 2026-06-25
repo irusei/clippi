@@ -1,4 +1,4 @@
-import { formatTime } from "../utils";
+import { formatTime } from "../../utils";
 
 interface MarkerProps {
     label: string;
@@ -36,7 +36,7 @@ export default function TimelineMarker({
         >
             <div
                 className={`
-                absolute top-2 flex flex-col ${colorClass} text-mocha-base px-2 py-1 
+                absolute top-2 flex flex-col ${colorClass} text-mocha-base px-2 py-1
                 rounded text-[10px] font-bold whitespace-nowrap z-30
                 ${placementClass}
             `}
