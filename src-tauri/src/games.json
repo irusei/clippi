@@ -160,7 +160,7 @@
     {
         "name": "MECCHA CHAMELEON",
         "icon": "https://shared.fastly.steamstatic.com/community_assets/images/apps/4704690/fbef288370f6ae51cb0a5066d7fb13d26147c94a.jpg",
-        "executables": ["PenguinHotel.exe"],
+        "executables": ["PenguinHotel-Win64-Shipping.exe"],
         "use_window_capture": false,
         "title_regex": []
     },
