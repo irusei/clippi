@@ -5,6 +5,7 @@ use std::{
     sync::{LazyLock, Mutex},
 };
 
+use log::{error, info};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -137,9 +138,7 @@ pub fn store_clip(
     action_count: Vec<usize>,
     integration_result: Option<Box<dyn GameIntegrationResult>>,
 ) {
-    let clip_name = integration_result
-        .as_ref()
-        .and_then(|r| r.clip_name());
+    let clip_name = integration_result.as_ref().and_then(|r| r.clip_name());
     // prepare move
     let clip_filename = clip_path.file_name().expect("Failed to get filename?");
     let mut new_path = get_clipping_folder();
@@ -190,6 +189,7 @@ pub fn store_clip(
             favorited: false,
         });
     }
+    info!("clip stored ({}s, {} bytes)", duration, file_size);
     save_to_file();
 }
 
@@ -253,11 +253,20 @@ pub fn store_new_trim(clip_path: PathBuf, game_data: DetectedGameData, action_co
                 favorited: false,
             });
         }
+        info!(
+            "trim stored: {} - Trim.{} ({}s, {} bytes)",
+            chrono::Local::now().format("%Y-%m-%d %H-%M-%S").to_string(),
+            extension,
+            duration,
+            file_size
+        );
         save_to_file();
     }
 }
 
 pub fn delete_clip(clip: Clip) {
+    info!("deleting clip: {}", clip.title);
+
     // delete clip from fs
     let clip_path = prefix_path(&clip.path);
     let clip_thumbnail_path = prefix_path(&clip.thumbnail);
@@ -273,6 +282,8 @@ pub fn delete_clip(clip: Clip) {
 }
 
 pub async fn upload_clip(app: tauri::AppHandle, clip: Clip) -> Result<String, String> {
+    info!("uploading clip: {}", clip.title);
+
     let settings = storage::settings::get_settings();
 
     let endpoint = settings
@@ -288,7 +299,10 @@ pub async fn upload_clip(app: tauri::AppHandle, clip: Clip) -> Result<String, St
 
     let remote_url = uploader::upload_clip(app, endpoint, token, &full_path_buf)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            error!("upload failed for '{}': {}", clip.title, e);
+            e.to_string()
+        })?;
 
     // update clip with remote_path
     {
@@ -302,6 +316,7 @@ pub async fn upload_clip(app: tauri::AppHandle, clip: Clip) -> Result<String, St
     }
     save_to_file();
 
+    info!("clip uploaded: {}", clip.title);
     Ok(remote_url)
 }
 pub fn get_clips() -> Vec<Clip> {

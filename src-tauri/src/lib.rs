@@ -9,6 +9,7 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Emitter, Manager,
 };
+use tauri_plugin_log::{Target, TargetKind};
 
 use crate::{
     integrations::discord::rpc,
@@ -211,6 +212,17 @@ pub fn run() {
         watcher::init();
     });
     tauri::Builder::default()
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .target(Target::new(TargetKind::Stdout))
+                .target(Target::new(TargetKind::Webview))
+                .target(Target::new(TargetKind::LogDir {
+                    file_name: Some("log".to_string()),
+                }))
+                .level(log::LevelFilter::Debug)
+                .level_for("clippi_lib", log::LevelFilter::Trace)
+                .build(),
+        )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .setup(|app| {

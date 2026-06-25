@@ -1,6 +1,7 @@
 use regex::Regex;
 
 use crate::storage::games::{get_games, DetectedGameData};
+use log::error;
 
 pub fn process_exists(filename: &String) -> bool {
     get_games()
@@ -30,7 +31,10 @@ pub fn get_detected_game(
                         false => continue,
                     },
                     Err(_) => {
-                        println!("invalid regex pattern for game {}", &game.name);
+                        error!(
+                            "invalid regex pattern for game '{}': {}",
+                            &game.name, &match_regex
+                        );
                         return None;
                     }
                 }

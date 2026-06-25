@@ -5,6 +5,7 @@ use std::{
 };
 
 use device_query::{device_state, DeviceQuery, Keycode};
+use log::{debug, error, info, warn};
 use serde::Deserialize;
 use std::str::FromStr;
 
@@ -197,27 +198,45 @@ pub fn handle_process(proc: Process) {
                 Ok(_) => {
                     titles = get_titles(proc.process_id);
                 }
-                Err(_) => println!(
-                    "failed to wait for window for process {}, unable to record",
-                    &filename
-                ),
+                Err(_) => {
+                    if filename != "RobloxPlayerBeta.exe" {
+                        error!(
+                            "failed to wait for window for process {}, unable to record",
+                            &filename
+                        );
+                    }
+                }
             }
         }
         if let Some(detected_game) = detector::get_detected_game(&filename, &titles) {
+            info!(
+                "game detected: {} ({}), starting recording",
+                detected_game.name, filename
+            );
+
             // check global recording toggle
             let settings = get_settings();
             if !settings.recording_enabled {
+                debug!("recording is globally disabled, skipping");
                 return;
             }
 
             // check per-game toggle
             let preferences = game_preferences::get_game_preference(&detected_game.name);
             if !preferences.enabled {
+                debug!(
+                    "recording is disabled for game '{}', skipping",
+                    detected_game.name
+                );
                 return;
             }
 
             // check storage limits
             if storage::settings::is_over_limit(storage_info::calculate_clips_size()) {
+                warn!(
+                    "storage limit reached, skipping recording for '{}'",
+                    detected_game.name
+                );
                 return;
             }
 
@@ -266,6 +285,8 @@ pub fn handle_process(proc: Process) {
             // start input monitoring before recording begins
             start_input_monitoring();
 
+            info!("recording started");
+
             let recorder_result = record(w_name, &detected_game, recorder_settings);
             let bookmarks = get_current_bookmarks();
             let action_count = get_action_count();
@@ -279,6 +300,7 @@ pub fn handle_process(proc: Process) {
 
             match recorder_result {
                 Ok(clip_path) => {
+                    info!("recording finished, saving clip: {:?}", clip_path);
                     store_clip(
                         crate::storage::clips::ClipType::Recording,
                         clip_path,
@@ -289,7 +311,7 @@ pub fn handle_process(proc: Process) {
                     );
                 }
                 Err(e) => {
-                    eprintln!("An error occurred while recording: {:?}", e.to_string());
+                    error!("recording failed: {}", e);
                 }
             }
         }
@@ -323,6 +345,6 @@ pub async fn init() {
     .await
     {
         Ok(_) => return,
-        Err(e) => println!("watcher thread crashed: {}", e),
+        Err(e) => error!("watcher thread crashed: {}", e),
     }
 }
