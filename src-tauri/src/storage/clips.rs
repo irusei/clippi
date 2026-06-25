@@ -355,3 +355,21 @@ pub fn toggle_favorite(clip: Clip) {
     }
     save_to_file();
 }
+
+pub fn cleanup_root_files() {
+    let folder = get_clipping_folder();
+
+    if let Ok(entries) = fs::read_dir(&folder) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                if let Some(ext) = path.extension() {
+                    if ext.eq_ignore_ascii_case("mp4") {
+                        info!("removing raw recording: {}", path.display());
+                        let _ = fs::remove_file(path);
+                    }
+                }
+            }
+        }
+    }
+}
