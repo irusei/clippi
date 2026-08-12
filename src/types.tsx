@@ -60,6 +60,7 @@ export interface Settings {
     max_storage_limit: string;
     upload_endpoint?: string | null;
     upload_token?: string | null;
+    steamgriddb_api_key?: string | null;
 }
 
 export type BaseFilter = {

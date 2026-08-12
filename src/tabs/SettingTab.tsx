@@ -420,6 +420,31 @@ export default function SettingTab() {
 
                 <section className="flex flex-col gap-4">
                     <h3 className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">
+                        Integrations
+                    </h3>
+
+                    <div className="flex flex-col gap-3 px-1">
+                        <SettingsContainer
+                            title="SteamGridDB API Key"
+                            description="API key for fetching game icons from SteamGridDB"
+                        >
+                            <Input
+                                type="password"
+                                className="w-1/4 bg-mocha-mantle"
+                                value={settings.steamgriddb_api_key || ""}
+                                onChange={(value) =>
+                                    updateSetting(
+                                        "steamgriddb_api_key",
+                                        value || undefined,
+                                    )
+                                }
+                            />
+                        </SettingsContainer>
+                    </div>
+                </section>
+
+                <section className="flex flex-col gap-4">
+                    <h3 className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">
                         Zipline Uploader
                     </h3>
 
