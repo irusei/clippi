@@ -110,12 +110,14 @@ fn trim_clip(clip: Clip, start: f64, end: f64) -> bool {
 
     output_path.push(&clip_path.file_name().unwrap());
 
-    let action_count =
-        clip.action_count[std::cmp::min(start.floor() as usize, clip.action_count.len())
-            ..=(std::cmp::min(end.floor() as usize, clip.action_count.len()))]
-            .iter()
-            .cloned()
-            .collect::<Vec<usize>>();
+    let start_idx = start.floor() as usize;
+    let end_idx = end.floor() as usize;
+    let len = clip.action_count.len();
+
+    let action_count = clip.action_count[start_idx.min(len - 1)..=end_idx.min(len - 1)]
+        .iter()
+        .cloned()
+        .collect::<Vec<usize>>();
 
     match ffmpeg::ffmpeg::trim_clip(&clip_path, &output_path, start, end) {
         Ok(_) => {
