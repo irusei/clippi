@@ -9,6 +9,7 @@ import Input from "./ui/Input";
 import LeagueClipCard from "./integration/league/LeagueClipCard";
 import { getGameResult } from "../integration/league/LeagueUtils";
 import { confirm } from "@tauri-apps/plugin-dialog";
+import clsx from "clsx";
 
 interface ClipProps {
     clip: VodClip;
@@ -203,10 +204,17 @@ export default function Clip({ clip, onSelect, isSelected }: ClipProps) {
                     </>
                 )}
                 <div
-                    className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-mocha-surface0 cursor-pointer"
+                    className={
+                        clsx(
+                            "flex items-center justify-center w-10 h-10 rounded-lg hover:bg-mocha-surface0",
+                            clip.favorited ? "cursor-not-allowed" : "cursor-pointer"
+                        )
+                    }
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+
+                        if (clip.favorited) return;
                         confirm("Are you sure you want to delete this clip?", {
                             title: "Delete Clip",
                             kind: "warning",
@@ -215,7 +223,7 @@ export default function Clip({ clip, onSelect, isSelected }: ClipProps) {
                         });
                     }}
                 >
-                    <Trash className="w-5 h-5 text-mocha-red hover:text-mocha-red/80" />
+                    <Trash className={clsx("w-5 h-5 transition-all", clip.favorited ? "text-mocha-red/10" : "text-mocha-red hover:text-mocha-red/80")} />
                 </div>
             </div>
         </div>
