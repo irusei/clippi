@@ -106,8 +106,6 @@ export default function ClipTab() {
         // process only the favorited clips
         let clipsToDelete = [...selectedClipIds].map((clip_id) => clips.find((c) => c.id === clip_id)).filter((clip) => clip && !clip.favorited);
 
-        console.log(clipsToDelete);
-
         const confirmed = await confirm(
             'Only non-favorited clips will be deleted.', `Delete ${clipsToDelete.length} clip${clipsToDelete.length > 1 ? "s" : ""}?`,
         );
