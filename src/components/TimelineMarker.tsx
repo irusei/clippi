@@ -7,6 +7,8 @@ interface MarkerProps {
     colorClass: string;
     hidden: boolean;
     onMouseDown?: (e: React.MouseEvent) => void;
+    viewStart?: number;
+    viewEnd?: number;
 }
 
 export default function TimelineMarker({
@@ -16,9 +18,15 @@ export default function TimelineMarker({
     colorClass,
     hidden,
     onMouseDown,
+    viewStart = 0,
+    viewEnd = duration,
 }: MarkerProps) {
-    const percent = (time / duration) * 100;
+    const span = viewEnd - viewStart;
+    const percent = ((time - viewStart) / span) * 100;
     const isNearEnd = percent > 90;
+
+    if (percent < 0 || percent > 100)
+        return <div/>;
 
     let placementClass = isNearEnd ? "right-2 text-right" : "left-2 text-left";
 

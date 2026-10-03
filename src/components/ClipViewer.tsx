@@ -52,6 +52,8 @@ export default function ClipViewer({
     const [currentTime, setCurrentTime] = useState(0);
     const [trimLeft, setTrimLeft] = useState<number>(0);
     const [trimRight, setTrimRight] = useState<number>(clip.duration);
+    const [viewStart, setViewStart] = useState(0);
+    const [viewEnd, setViewEnd] = useState<number>(clip.duration);
     const [isDragging, setIsDragging] = useState<"left" | "right" | null>(null);
     const [volume, setVolume] = useState(1);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -77,7 +79,8 @@ export default function ClipViewer({
 
             const rect = timelineRef.current.getBoundingClientRect();
             const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-            const newTime = (x / rect.width) * clip.duration;
+            const newTime =
+                viewStart + (x / rect.width) * (viewEnd - viewStart);
 
             if (isDragging === "left") {
                 setTrimLeft(Math.min(newTime, trimRight - 0.001));
@@ -85,7 +88,7 @@ export default function ClipViewer({
                 setTrimRight(Math.max(newTime, trimLeft + 0.001));
             }
         },
-        [isDragging, trimLeft, trimRight, clip.duration],
+        [isDragging, trimLeft, trimRight, viewStart, viewEnd],
     );
 
     const handleMouseUp = useCallback(() => {
@@ -97,6 +100,8 @@ export default function ClipViewer({
         setTrimLeft(0);
         setTrimRight(clip.duration);
         setIsDragging(null);
+        setViewStart(0);
+        setViewEnd(clip.duration);
         setTitleInput(clip.title);
         setIsEditingTitle(false);
         setMouseDown(false);
@@ -156,13 +161,20 @@ export default function ClipViewer({
 
     const timelineData = useMemo(() => {
         const maxPoints = 400;
-        const data = clip.action_count;
-        const step = Math.ceil(data.length / Math.min(maxPoints, data.length));
+        const startIdx = Math.max(0, Math.floor(viewStart));
+        const endIdx = Math.min(clip.action_count.length, Math.ceil(viewEnd));
+        const data = clip.action_count.slice(startIdx, endIdx);
+
+        if (data.length === 0) return [];
+
+        const step = Math.ceil(
+            data.length / Math.min(maxPoints, data.length),
+        );
 
         const downsampled = data
             .filter((_, i) => i % step === 0)
             .map((v, i) => ({
-                index: i * step,
+                index: startIdx + i * step,
                 value: v,
             }));
 
@@ -173,9 +185,9 @@ export default function ClipViewer({
             index: d.index,
             value: smoothedValues[i],
         }));
-    }, [clip.id]);
+    }, [clip.id, viewStart, viewEnd]);
 
-    const adjustTimeline = (e: React.MouseEvent<HTMLDivElement>) => {
+    const adjustSeekBar = (e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget!.getBoundingClientRect();
         if (playerRef.current) {
             const newTime =
@@ -183,6 +195,56 @@ export default function ClipViewer({
             playerRef.current.currentTime = newTime;
             setCurrentTime(newTime);
         }
+    };
+
+    const adjustTimeline = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget!.getBoundingClientRect();
+        if (playerRef.current) {
+            const newTime =
+                viewStart +
+                ((e.clientX - rect.left) / rect.width) *
+                    (viewEnd - viewStart);
+            playerRef.current.currentTime = newTime;
+            setCurrentTime(newTime);
+        }
+    };
+
+    const toPct = (time: number) =>
+        Math.max(
+            0,
+            Math.min(
+                ((time - viewStart) / (viewEnd - viewStart)) * 100,
+                100,
+            ),
+        );
+
+    const zoomTimeline = (e: React.WheelEvent<HTMLDivElement>) => {
+        if (!timelineRef.current) return;
+
+        const rect = timelineRef.current.getBoundingClientRect();
+        const ratio = Math.max(
+            0,
+            Math.min((e.clientX - rect.left) / rect.width, 1),
+        );
+        const span = viewEnd - viewStart;
+        const focus = viewStart + ratio * span;
+
+        const minWindow = Math.min(5, clip.duration);
+        const newSpan = Math.min(
+            clip.duration,
+            Math.max(minWindow, span * (e.deltaY > 0 ? 1.25 : 0.8)),
+        );
+
+        const newStart = Math.max(
+            0,
+            Math.min(focus - ratio * newSpan, clip.duration - newSpan),
+        );
+
+        setViewStart(newStart);
+        setViewEnd(newStart + newSpan);
+
+        if (playerRef.current) playerRef.current.currentTime = focus;
+        setCurrentTime(focus);
     };
 
     return (
@@ -342,10 +404,10 @@ export default function ClipViewer({
                         className="relative w-full h-1 bg-mocha-surface0 rounded-full mb-3 group cursor-pointer"
                         onMouseMove={(e) => {
                             if (!mouseDown) return;
-                            adjustTimeline(e);
+                            adjustSeekBar(e);
                         }}
                         onMouseUp={(e) => {
-                            adjustTimeline(e);
+                            adjustSeekBar(e);
                         }}
                     >
                         <div
@@ -423,21 +485,39 @@ export default function ClipViewer({
                         if (isDragging) return;
                         adjustTimeline(e);
                     }}
+                    onWheel={zoomTimeline}
                 >
                     <div
                         className="absolute h-full bg-mocha-lavender/10 border-x border-mocha-lavender/40"
                         style={{
-                            left: `${(trimLeft / clip.duration) * 100}%`,
-                            width: `${((trimRight - trimLeft) / clip.duration) * 100}%`,
+                            left: `${toPct(trimLeft)}%`,
+                            width: `${toPct(trimRight) - toPct(trimLeft)}%`,
                         }}
                     />
 
-                    <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-white/80 z-10"
-                        style={{
-                            left: `${(currentTime / clip.duration) * 100}%`,
-                        }}
-                    />
+                    {(viewStart > 0 || viewEnd < clip.duration) && (
+                        <>
+                            <div
+                                className="absolute top-1 left-2 text-[10px] font-mono text-mocha-text opacity-50 pointer-events-none z-40"
+                            >
+                                <span>{formatTime(viewStart)}</span>
+                            </div>
+                            <div
+                                className="absolute top-1 right-2 text-right text-[10px] font-mono text-mocha-text opacity-50 pointer-events-none z-40"
+                            >
+                                <span>{formatTime(viewEnd)}</span>
+                            </div>
+                        </>
+                    )}
+
+                    {currentTime >= viewStart && currentTime <= viewEnd && (
+                        <div
+                            className="absolute top-0 bottom-0 w-0.5 bg-white/80 z-10"
+                            style={{
+                                left: `${((currentTime - viewStart) / (viewEnd - viewStart)) * 100}%`,
+                            }}
+                        />
+                    )}
 
                     <TimelineMarker
                         label="START"
@@ -449,6 +529,8 @@ export default function ClipViewer({
                             setIsDragging("left");
                         }}
                         hidden={false}
+                        viewStart={viewStart}
+                        viewEnd={viewEnd}
                     />
 
                     <TimelineMarker
@@ -461,6 +543,8 @@ export default function ClipViewer({
                             setIsDragging("right");
                         }}
                         hidden={false}
+                        viewStart={viewStart}
+                        viewEnd={viewEnd}
                     />
 
                     {getMarkerData(clip.integration_result, clip.bookmarks).map(
@@ -472,6 +556,8 @@ export default function ClipViewer({
                                 duration={clip.duration}
                                 colorClass={marker.colorClass}
                                 hidden={true}
+                                viewStart={viewStart}
+                                viewEnd={viewEnd}
                             />
                         ),
                     )}
@@ -484,7 +570,7 @@ export default function ClipViewer({
                             <XAxis
                                 type="number"
                                 dataKey="index"
-                                domain={[0, clip.duration]}
+                                domain={[viewStart, viewEnd]}
                                 height={0}
                                 axisLine={false}
                                 tickLine={false}
@@ -495,6 +581,7 @@ export default function ClipViewer({
                                 dataKey="value"
                                 stroke="#cba6f7"
                                 dot={false}
+                                isAnimationActive={false}
                             />
                             <Tooltip
                                 labelFormatter={(label) =>
