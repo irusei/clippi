@@ -88,8 +88,6 @@ export default function ClipViewer({
         setIsDragging(null);
         setViewStart(0);
         setViewEnd(clip.duration);
-        setTitleInput(clip.title);
-        setIsEditingTitle(false);
         setMouseDown(false);
 
         const unlisten = listen("tauri://resize", () => {
