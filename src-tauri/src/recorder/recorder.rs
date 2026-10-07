@@ -30,6 +30,7 @@ use std::{
     path::PathBuf,
     time::{Duration, SystemTime},
 };
+use log::info;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum VodEncoder {
@@ -130,6 +131,11 @@ pub fn record(
         gpu_screen_recorder_args.push(String::from("-a"));
         gpu_screen_recorder_args.push(output_input_list.join("|"));
     }
+
+    info!(
+        "starting gpu-screen-recorder for '{}', output: {}",
+        game.name, output_path
+    );
 
     let child = Command::new("gpu-screen-recorder")
         .args(&gpu_screen_recorder_args)
@@ -303,6 +309,11 @@ pub fn record(
 
     let mut output = output_builder.build()?;
     output.start()?;
+
+    info!(
+        "started obs recording for '{}', output: {}",
+        game.name, output_path
+    );
 
     let started_time = SystemTime::now();
     watcher::set_recording_start_time(Some(started_time));

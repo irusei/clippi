@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use futures_util::TryStreamExt;
+use log::info;
 use reqwest::{
     multipart::{Form, Part},
     Client,
@@ -16,6 +17,8 @@ pub async fn upload_clip(
     token: &str,
     file_path: &PathBuf,
 ) -> Result<String, anyhow::Error> {
+    info!("uploading clip: {:?}", file_path);
+
     let client = Client::new();
 
     let filename = file_path
@@ -65,5 +68,6 @@ pub async fn upload_clip(
         .ok_or_else(|| anyhow::anyhow!("Failed to parse upload response"))?
         .to_string();
 
+    info!("clip uploaded successfully: {}", url);
     Ok(url)
 }
