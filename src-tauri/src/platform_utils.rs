@@ -194,16 +194,10 @@ pub fn rescan_processes() {
 
 #[cfg(target_os = "windows")]
 pub fn list_processes() -> Vec<String> {
-    let wmi_con = match WMIConnection::new() {
-        Ok(con) => con,
-        Err(_) => return vec![],
-    };
-    let processes: Result<Vec<Process>, _> =
-        wmi_con.raw_query("SELECT Name, ProcessId FROM Win32_Process");
-    let mut names: Vec<String> = match processes {
-        Ok(procs) => procs.iter().map(|p| p.name.clone()).collect(),
-        Err(_) => return vec![],
-    };
+    let mut names: Vec<String> = helper_get_processes()
+        .iter()
+        .map(|p| p.name.clone())
+        .collect();
 
     names.sort();
     names.dedup();

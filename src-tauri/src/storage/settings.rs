@@ -42,6 +42,9 @@ pub struct Settings {
     #[serde(default)]
     pub upload_token: Option<String>,
 
+    #[serde(default)]
+    pub steamgriddb_api_key: Option<String>,
+
     #[serde(default = "default_max_storage_limit")]
     pub max_storage_limit: String,
 }
@@ -113,6 +116,7 @@ fn load_settings_from_file() -> Settings {
                 recording_enabled: true,
                 upload_endpoint: None,
                 upload_token: None,
+                steamgriddb_api_key: None,
                 max_storage_limit: String::from("Unlimited"),
             }
         }

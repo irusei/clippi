@@ -4,7 +4,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { Switch } from "../components/ui/Switch";
 import Input from "../components/ui/Input";
 import ProcessPicker from "../components/ProcessPicker";
-import { Plus, Save, Search, Trash } from "lucide-react";
+import SteamGridDBPicker from "../components/integration/SteamGridDBPicker";
+import { Plus, Save, Search, Trash, Sparkles } from "lucide-react";
 import { SettingsContainer } from "../components/ui/SettingsContainer";
 import { clamp } from "../utils";
 import { platform } from "@tauri-apps/plugin-os";
@@ -34,6 +35,17 @@ export default function GameTab() {
     let [gamePreferences, setGamePreferences] = useState<GamePreference | null>(
         null,
     );
+    let [pickerOpen, setPickerOpen] = useState(false);
+
+    function openPicker() {
+        setPickerOpen(true);
+    }
+
+    function selectIcon(iconUrl: string) {
+        if (!modifiedGame) return;
+        updateField("icon", iconUrl);
+        setPickerOpen(false);
+    }
 
     function getGames() {
         invoke("get_games").then((games) => {
@@ -214,14 +226,23 @@ export default function GameTab() {
                                     title="Icon"
                                     description="URL to the icon"
                                 >
-                                    <Input
-                                        className="bg-mocha-mantle min-w-1/2"
-                                        type="text"
-                                        value={modifiedGame.icon ?? ""}
-                                        onChange={(value) =>
-                                            updateField("icon", value)
-                                        }
-                                    />
+                                    <div className="flex flex-row gap-2 items-center">
+                                        <Input
+                                            className="bg-mocha-mantle flex-1"
+                                            type="text"
+                                            value={modifiedGame.icon ?? ""}
+                                            onChange={(value) =>
+                                                updateField("icon", value)
+                                            }
+                                        />
+                                        <button
+                                            onClick={openPicker}
+                                            className={`rounded-md p-2 flex items-center justify-center transition-colors bg-mocha-mauve hover:bg-mocha-mauve/80 text-mocha-base`}
+                                            title="Fetch icon from SteamGridDB"
+                                        >
+                                            <Sparkles className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </SettingsContainer>
                             </section>
 
@@ -497,6 +518,15 @@ export default function GameTab() {
                     )}
                 </div>
             </div>
+
+            <SteamGridDBPicker
+                isOpen={pickerOpen}
+                gameName={modifiedGame?.name ?? ""}
+                onSelect={selectIcon}
+                onClose={() => {
+                    setPickerOpen(false);
+                }}
+            />
         </div>
     );
 }

@@ -103,16 +103,16 @@ export default function ClipTab() {
     }
 
     async function handleDeleteSelected() {
+        // process only the favorited clips
+        let clipsToDelete = [...selectedClipIds].map((clip_id) => clips.find((c) => c.id === clip_id)).filter((clip) => clip && !clip.favorited);
+
         const confirmed = await confirm(
-            `Delete ${selectedClipIds.size} clip${selectedClipIds.size > 1 ? "s" : ""}?`,
+            'Only non-favorited clips will be deleted.', `Delete ${clipsToDelete.length} clip${clipsToDelete.length > 1 ? "s" : ""}?`,
         );
         if (!confirmed) return;
 
-        for (const clipId of selectedClipIds) {
-            const clip = clips.find((c) => c.id === clipId);
-            if (clip) {
-                await invoke("delete_clip", { clip });
-            }
+        for (const clip of clipsToDelete) {
+            await invoke("delete_clip", { clip });
         }
 
         setSelectedClipIds(new Set());

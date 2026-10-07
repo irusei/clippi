@@ -12,7 +12,7 @@ use tauri::{
 use tauri_plugin_log::{Target, TargetKind};
 
 use crate::{
-    integrations::discord::rpc,
+    integrations::{discord::rpc, steamgriddb::icon},
     storage::{
         clips::{clean_path, prefix_path, Clip},
         game_preferences::{self as game_pref_storage, GamePreference},
@@ -111,8 +111,11 @@ fn trim_clip(clip: Clip, start: f64, end: f64) -> bool {
 
     output_path.push(&clip_path.file_name().unwrap());
 
-    let action_count = clip.action_count
-        [(start.floor() as usize)..=(std::cmp::min(end.floor() as usize, clip.action_count.len()))]
+    let start_idx = start.floor() as usize;
+    let end_idx = end.floor() as usize;
+    let len = clip.action_count.len();
+
+    let action_count = clip.action_count[start_idx.min(len - 1)..=end_idx.min(len - 1)]
         .iter()
         .cloned()
         .collect::<Vec<usize>>();
@@ -203,6 +206,11 @@ async fn upload_clip(clip: Clip, app: tauri::AppHandle) -> Result<String, String
 #[tauri::command]
 fn toggle_favorite(clip: Clip) {
     storage::clips::toggle_favorite(clip);
+}
+
+#[tauri::command]
+async fn search_steamgriddb(query: String) -> Result<serde_json::Value, String> {
+    icon::search_steamgriddb(query).await
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -300,6 +308,7 @@ pub fn run() {
             set_game_preference,
             get_storage_info,
             upload_clip,
+            search_steamgriddb
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
