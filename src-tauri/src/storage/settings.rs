@@ -3,7 +3,11 @@ use std::{
     io::Write,
     path::PathBuf,
     sync::{LazyLock, Mutex},
+    thread::sleep,
+    time::Duration,
 };
+
+use log::{error, info};
 
 use serde::{Deserialize, Serialize};
 
@@ -85,6 +89,15 @@ pub fn is_over_limit(total_clip_size: u64) -> bool {
     return total_clip_size >= max_clip_size_digit * gb_bytes;
 }
 
+fn get_default_clip_path() -> String {
+    let mut default_path = dirs::video_dir().expect("Failed to get video dir");
+    default_path.push("clippi");
+
+    fs::create_dir_all(&default_path).expect("Failed to create local dir");
+
+    return default_path.to_string_lossy().to_string();
+}
+
 fn load_settings_from_file() -> Settings {
     let mut path = dirs::data_local_dir().expect("Failed to get dir for settings");
     path.push("clippi");
@@ -96,30 +109,23 @@ fn load_settings_from_file() -> Settings {
     let exists = path.exists();
 
     match exists {
-        false => {
-            let mut video_dir = dirs::video_dir().expect("Failed to get video dir");
-            video_dir.push("clippi");
-
-            fs::create_dir_all(&video_dir).expect("Failed to create local dir");
-
-            Settings {
-                clip_path: video_dir.to_string_lossy().to_string(),
-                resolution: (1920, 1080),
-                framerate: 60,
-                bitrate: 10000,
-                encoder: VodEncoder::AV1,
-                capture_desktop_audio: false,
-                capture_mic: false,
-                discord_rpc_enabled: false,
-                windows_autostart: false,
-                bookmark_key: String::from("F8"),
-                recording_enabled: true,
-                upload_endpoint: None,
-                upload_token: None,
-                steamgriddb_api_key: None,
-                max_storage_limit: String::from("Unlimited"),
-            }
-        }
+        false => Settings {
+            clip_path: get_default_clip_path(),
+            resolution: (1920, 1080),
+            framerate: 60,
+            bitrate: 10000,
+            encoder: VodEncoder::AV1,
+            capture_desktop_audio: false,
+            capture_mic: false,
+            discord_rpc_enabled: false,
+            windows_autostart: false,
+            bookmark_key: String::from("F8"),
+            recording_enabled: true,
+            upload_endpoint: None,
+            upload_token: None,
+            steamgriddb_api_key: None,
+            max_storage_limit: String::from("Unlimited"),
+        },
         true => {
             let file = File::open(&path).expect("Failed to open settings.json");
             serde_json::from_reader(file).expect("Failed to deserialize json")
@@ -156,6 +162,36 @@ pub fn get_clipping_folder() -> PathBuf {
     fs::create_dir_all(&path).unwrap();
 
     return path;
+}
+
+pub fn ensure_clip_path_available() {
+    let mut settings = get_settings();
+
+    let clip_path = PathBuf::from(settings.clip_path);
+    if clip_path.is_dir() {
+        return;
+    }
+
+    info!(
+        "clip path {} is missing at startup, waiting for it to mount",
+        clip_path.display()
+    );
+
+    for _ in 1..=12 {
+        sleep(Duration::from_secs(5));
+
+        if clip_path.is_dir() {
+            return;
+        }
+    }
+
+    error!(
+        "clip path {} never mounted, resetting to default",
+        clip_path.display()
+    );
+
+    settings.clip_path = get_default_clip_path();
+    set_settings(settings);
 }
 
 pub fn set_settings(new_settings: Settings) {

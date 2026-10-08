@@ -215,6 +215,9 @@ async fn search_steamgriddb(query: String) -> Result<serde_json::Value, String> 
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // wait for the clip directory to be available (60s timeout) otherwise reset dir
+    storage::settings::ensure_clip_path_available();
+
     spawn(|| {
         rpc::init();
         watcher::init();
