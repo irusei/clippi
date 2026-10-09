@@ -240,21 +240,21 @@ export default function LeagueScoreboardTab({
         <div className="p-2 space-y-2">
             <div className="flex items-center justify-between text-xs text-mocha-overlay1 px-1">
                 <span>{result.data.game_stats.gameMode}</span>
-                <span>{formatTime(result.data.game_stats.gameTime)}</span>
-            </div>
-            {gameResult && (
-                <div className="flex justify-end">
-                    <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                            gameResult === "Win"
-                                ? "text-mocha-green bg-mocha-green/10"
-                                : "text-mocha-red bg-mocha-red/10"
-                        }`}
-                    >
-                        {gameResult}
-                    </span>
+                <div className="flex items-center gap-2">
+                    <span>{formatTime(result.data.game_stats.gameTime)}</span>
+                    {gameResult && (
+                        <span
+                            className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                                gameResult === "Win"
+                                    ? "text-mocha-green bg-mocha-green/10"
+                                    : "text-mocha-red bg-mocha-red/10"
+                            }`}
+                        >
+                            {gameResult}
+                        </span>
+                    )}
                 </div>
-            )}
+            </div>
             <div className="flex flex-col gap-2">
                 {teams.map((team) => (
                     <TeamPanel
