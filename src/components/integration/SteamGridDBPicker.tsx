@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import Input from "../ui/Input";
 import { invoke } from "@tauri-apps/api/core";
+import { Settings } from "../../types";
 
 interface SteamGridDBPickerProps {
     isOpen: boolean;
@@ -39,6 +40,14 @@ export default function SteamGridDBPicker({
         setLoading(true);
         setError(null);
         try {
+            const settings = (await invoke("get_settings")) as Settings;
+            if (!settings.steamgriddb_api_key) {
+                setError(
+                    "No SteamGridDB API key is configured, so icon search cannot run. Add your API key in Settings to fetch game icons.",
+                );
+                return;
+            }
+
             const data = (await invoke("search_steamgriddb", {
                 query: encodeURIComponent(q),
             })) as IconsResponse;
