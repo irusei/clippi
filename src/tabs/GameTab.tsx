@@ -37,10 +37,6 @@ export default function GameTab() {
     );
     let [pickerOpen, setPickerOpen] = useState(false);
 
-    function openPicker() {
-        setPickerOpen(true);
-    }
-
     function selectIcon(iconUrl: string) {
         if (!modifiedGame) return;
         updateField("icon", iconUrl);
@@ -226,7 +222,7 @@ export default function GameTab() {
                                     title="Icon"
                                     description="URL to the icon"
                                 >
-                                    <div className="flex flex-row gap-2 items-center">
+                                    <div className="relative flex flex-row gap-2 items-center">
                                         <Input
                                             className="bg-mocha-mantle flex-1"
                                             type="text"
@@ -236,12 +232,20 @@ export default function GameTab() {
                                             }
                                         />
                                         <button
-                                            onClick={openPicker}
+                                            onClick={() =>
+                                                setPickerOpen(!pickerOpen)}
                                             className={`rounded-md p-2 flex items-center justify-center transition-colors bg-mocha-mauve hover:bg-mocha-mauve/80 text-mocha-base`}
                                             title="Fetch icon from SteamGridDB"
                                         >
                                             <Sparkles className="w-4 h-4" />
                                         </button>
+
+                                        <SteamGridDBPicker
+                                            isOpen={pickerOpen}
+                                            gameName={modifiedGame?.name ?? ""}
+                                            onSelect={selectIcon}
+                                            onClose={() => setPickerOpen(false)}
+                                        />
                                     </div>
                                 </SettingsContainer>
                             </section>
@@ -519,14 +523,6 @@ export default function GameTab() {
                 </div>
             </div>
 
-            <SteamGridDBPicker
-                isOpen={pickerOpen}
-                gameName={modifiedGame?.name ?? ""}
-                onSelect={selectIcon}
-                onClose={() => {
-                    setPickerOpen(false);
-                }}
-            />
         </div>
     );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { X } from "lucide-react";
 import Input from "../ui/Input";
+import { Disclaimer } from "../ui/Disclaimer";
 import { invoke } from "@tauri-apps/api/core";
 import { Settings } from "../../types";
 
@@ -36,6 +37,7 @@ export default function SteamGridDBPicker({
     const [results, setResults] = useState<
         { name: string; year: string; iconUrl: string }[]
     >([]);
+
     async function performSearch(q: string) {
         setLoading(true);
         setError(null);
@@ -89,35 +91,41 @@ export default function SteamGridDBPicker({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            onClick={onClose}
+            className="absolute left-0 top-full w-full min-w-2/3 max-w-full bg-mocha-base border border-mocha-mauve/10 rounded-xl overflow-hidden z-20 flex flex-col"
         >
-            <div className="absolute inset-0 bg-black/50" />
-
-            <div
-                className="relative w-100 bg-mocha-mantle rounded-xl border border-mocha-surface0 shadow-2xl flex flex-col overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="px-4 py-3 border-b border-mocha-surface0">
-                    <div className="flex items-center gap-2 px-4 bg-mocha-base max-w-full rounded-lg">
-                        <Search className="h-4 w-4 text-mocha-text shrink-0" />
-                        <Input
-                            type="text"
-                            value={query}
-                            placeholder="Search games..."
-                            onChange={setQuery}
-                            onKeyDown={(key) => {
-                                if (key === "Enter") submitSearch();
-                            }}
-                            className="flex-1 focus:border-none border-none rounded-sm"
-                            autoFocus
-                        />
-                    </div>
+            <div className="flex items-center justify-between px-3 py-2 border-b border-mocha-mauve/10">
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">
+                        Icons
+                    </span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 max-h-100">
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-md p-1 flex items-center justify-center transition-colors hover:bg-mocha-mauve/20 text-mocha-overlay2"
+                    title="Close picker"
+                >
+                    <X className="w-4 h-4" />
+                </button>
+            </div>
+
+            <div className="flex flex-col px-3 py-2 gap-2">
+                <Input
+                    type="text"
+                    value={query}
+                    placeholder="Search games..."
+                    onChange={setQuery}
+                    onKeyDown={(key) => {
+                        if (key === "Enter") submitSearch();
+                    }}
+                    className="w-full bg-mocha-mantle rounded-lg focus:border-none border-none"
+                    autoFocus
+                />
+
+                <div className="max-h-60 overflow-y-auto scrollbar-hide flex flex-col">
                     {loading && (
-                        <div className="flex flex-col items-center justify-center py-12 gap-3">
+                        <div className="flex items-center justify-center py-4 gap-2">
                             <span className="animate-spin inline-block w-5 h-5 border-2 border-mocha-mauve border-t-transparent rounded-full" />
                             <p className="text-sm text-mocha-overlay1">
                                 Searching...
@@ -125,26 +133,34 @@ export default function SteamGridDBPicker({
                         </div>
                     )}
 
-                    {!loading && error && (
-                        <div className="flex flex-col items-center justify-center py-12 gap-2">
-                            <p className="text-sm text-mocha-red">{error}</p>
-                        </div>
-                    )}
+                    {!loading &&
+                        error && (
+                            <Disclaimer
+                                title={
+                                    error.includes("Settings")
+                                        ? "SteamGridDB not configured"
+                                        : "Search failed"
+                                }
+                                description={error}
+                                kind="danger"
+                            />
+                        )}
 
-                    {!loading && !error && results.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-12 gap-2">
-                            <p className="text-sm text-mocha-overlay1">
+                    {!loading &&
+                        !error &&
+                        results.length === 0 && (
+                            <div className="py-4 text-center text-sm text-mocha-subtext0">
                                 No results found
-                            </p>
-                        </div>
-                    )}
+                            </div>
+                        )}
 
                     {!loading &&
                         !error &&
                         results.map((result, index) => (
                             <button
                                 key={index}
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-mocha-base transition-colors text-left"
+                                type="button"
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-mocha-mauve/20 text-left"
                                 onClick={() => onSelect(result.iconUrl)}
                             >
                                 <img
@@ -156,7 +172,7 @@ export default function SteamGridDBPicker({
                                     <p className="text-sm font-medium text-mocha-text truncate">
                                         {result.name}
                                     </p>
-                                    <p className="text-xs text-mocha-overlay1">
+                                    <p className="text-xs text-mocha-overlay2">
                                         {result.year}
                                     </p>
                                 </div>
