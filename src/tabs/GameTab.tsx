@@ -222,7 +222,7 @@ export default function GameTab() {
                                     title="Icon"
                                     description="URL to the icon"
                                 >
-                                    <div className="relative flex flex-row gap-2 items-center">
+                                    <div className="relative flex min-w-1/2 flex-row gap-2 items-center">
                                         <Input
                                             className="bg-mocha-mantle flex-1"
                                             type="text"
@@ -332,86 +332,88 @@ export default function GameTab() {
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col p-4 rounded-lg bg-mocha-base gap-y-4">
-                                    <div className="flex flex-row justify-between">
-                                        <div className="flex flex-col gap-1">
-                                            <span className="text-sm font-medium text-mocha-text">
-                                                Regex title rules
-                                            </span>
+                                {platform() === "windows" && (
+                                    <div className="flex flex-col p-4 rounded-lg bg-mocha-base gap-y-4">
+                                        <div className="flex flex-row justify-between">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-sm font-medium text-mocha-text">
+                                                    Regex title rules
+                                                </span>
 
-                                            <span className="text-xs text-mocha-overlay1">
-                                                Regex patterns used to match
-                                                window titles
-                                            </span>
+                                                <span className="text-xs text-mocha-overlay1">
+                                                    Regex patterns used to match
+                                                    window titles
+                                                </span>
+                                            </div>
+
+                                            <button
+                                                onClick={() => {
+                                                    updateField("title_regex", [
+                                                        ...modifiedGame.title_regex,
+                                                        "",
+                                                    ]);
+                                                }}
+                                                className="p-2 text-mocha-mauve flex items-center justify-center hover:cursor-pointer"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                            </button>
                                         </div>
 
-                                        <button
-                                            onClick={() => {
-                                                updateField("title_regex", [
-                                                    ...modifiedGame.title_regex,
-                                                    "",
-                                                ]);
-                                            }}
-                                            className="p-2 text-mocha-mauve flex items-center justify-center hover:cursor-pointer"
-                                        >
-                                            <Plus className="w-4 h-4" />
-                                        </button>
-                                    </div>
-
-                                    {modifiedGame.title_regex.length > 0 && (
-                                        <div className="flex flex-col gap-y-2">
-                                            {modifiedGame.title_regex.map(
-                                                (regex, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className="flex items-center gap-2"
-                                                    >
-                                                        <Input
-                                                            className="bg-mocha-mantle flex-1"
-                                                            type="text"
-                                                            value={regex}
-                                                            onChange={(
-                                                                value,
-                                                            ) => {
-                                                                const updated =
-                                                                    [
-                                                                        ...modifiedGame.title_regex,
-                                                                    ];
-                                                                updated[index] =
-                                                                    value;
-                                                                updateField(
-                                                                    "title_regex",
-                                                                    updated,
-                                                                );
-                                                            }}
-                                                        />
-
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                const updated =
-                                                                    [
-                                                                        ...modifiedGame.title_regex,
-                                                                    ];
-                                                                updated.splice(
-                                                                    index,
-                                                                    1,
-                                                                );
-                                                                updateField(
-                                                                    "title_regex",
-                                                                    updated,
-                                                                );
-                                                            }}
-                                                            className="text-red-400 hover:text-red-500 px-2"
+                                        {modifiedGame.title_regex.length > 0 && (
+                                            <div className="flex flex-col gap-y-2">
+                                                {modifiedGame.title_regex.map(
+                                                    (regex, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className="flex items-center gap-2"
                                                         >
-                                                            <Trash className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                ),
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
+                                                            <Input
+                                                                className="bg-mocha-mantle flex-1"
+                                                                type="text"
+                                                                value={regex}
+                                                                onChange={(
+                                                                    value,
+                                                                ) => {
+                                                                    const updated =
+                                                                        [
+                                                                            ...modifiedGame.title_regex,
+                                                                        ];
+                                                                    updated[index] =
+                                                                        value;
+                                                                    updateField(
+                                                                        "title_regex",
+                                                                        updated,
+                                                                    );
+                                                                }}
+                                                            />
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const updated =
+                                                                        [
+                                                                            ...modifiedGame.title_regex,
+                                                                        ];
+                                                                    updated.splice(
+                                                                        index,
+                                                                        1,
+                                                                    );
+                                                                    updateField(
+                                                                        "title_regex",
+                                                                        updated,
+                                                                    );
+                                                                }}
+                                                                className="text-red-400 hover:text-red-500 px-2"
+                                                            >
+                                                                <Trash className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </section>
 
                             <section className="flex flex-col gap-4">
@@ -419,19 +421,21 @@ export default function GameTab() {
                                     COMPATIBILITY
                                 </h3>
 
-                                <SettingsContainer title="Use window capture">
-                                    <Switch
-                                        checked={
-                                            modifiedGame.use_window_capture
-                                        }
-                                        onChecked={(value) =>
-                                            updateField(
-                                                "use_window_capture",
-                                                value,
-                                            )
-                                        }
-                                    />
-                                </SettingsContainer>
+                                {platform() === "windows" && (
+                                    <SettingsContainer title="Use window capture">
+                                        <Switch
+                                            checked={
+                                                modifiedGame.use_window_capture
+                                            }
+                                            onChecked={(value) =>
+                                                updateField(
+                                                    "use_window_capture",
+                                                    value,
+                                                )
+                                            }
+                                        />
+                                    </SettingsContainer>
+                                )}
                             </section>
 
                             {gamePreferences && (

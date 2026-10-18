@@ -333,8 +333,8 @@ export default function SettingTab() {
                         </SettingsContainer>
 
                         <SettingsContainer
-                            title="Desktop Audio"
-                            description="Additionally capture desktop audio on top of game sounds"
+                            title={platform() === "windows" ? "Desktop Audio" : "Capture Audio"}
+                            description={platform() === "windows" ? "Additionally capture desktop audio on top of game sounds" : "Enable audio capturing for clips"}
                         >
                             <Switch
                                 checked={settings.capture_desktop_audio}
