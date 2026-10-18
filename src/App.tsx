@@ -71,6 +71,31 @@ function Sidebar({ currentTab, setCurrentTab }: SidebarProps) {
     );
 }
 
+interface StatusBarProps {
+    currentGame: DetectedGame | null;
+}
+
+function StatusBar({ currentGame }: StatusBarProps) {
+    return (
+        <div className="w-full absolute bottom-0 h-10 bg-mocha-base items-center text-center flex p-4 gap-x-2 justify-end border-t border-mocha-surface0">
+            {currentGame != null ? (
+                <>
+                    <img className="h-5 w-5" src={currentGame.icon ?? ""} />
+                    <p className="text-mocha-text">{currentGame.name}</p>
+                    <div className="h-2 w-2 rounded-xl bg-mocha-green" />
+                </>
+            ) : (
+                <>
+                    <p className="text-sm text-mocha-overlay2">
+                        Nothing is recording
+                    </p>
+                    <div className="h-2 w-2 rounded-full bg-mocha-surface2" />
+                </>
+            )}
+        </div>
+    );
+}
+
 export default function App() {
     const [currentTab, setCurrentTab] = useState<Tab>(Tab.Clips);
     const [currentGame, setCurrentGame] = useState<DetectedGame | null>(null);
@@ -100,7 +125,11 @@ export default function App() {
             <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} />
             {/* avoid tab rerendering */}
             <div
-                className={currentTab === Tab.Clips ? "w-full block" : "hidden"}
+                className={
+                    currentTab === Tab.Clips
+                        ? "w-full block pb-10"
+                        : "hidden"
+                }
             >
                 <ClipTab />
             </div>
@@ -119,14 +148,7 @@ export default function App() {
                 <SettingTab />
             </div>
 
-            {/* now playing game panel */}
-            {currentGame != null && (
-                <div className="w-full absolute bottom-0 h-10 bg-mocha-base items-center text-center flex p-4 gap-x-2 justify-end border-t border-mocha-surface0">
-                    <img className="h-5 w-5" src={currentGame.icon ?? ""} />
-                    <p className="text-mocha-text">{currentGame.name}</p>
-                    <div className="h-2 w-2 rounded-xl bg-mocha-green" />
-                </div>
-            )}
+            <StatusBar currentGame={currentGame} />
         </div>
     );
 }
