@@ -8,6 +8,7 @@ import SteamGridDBPicker from "../components/integration/SteamGridDBPicker";
 import { Plus, Save, Search, Trash, Sparkles } from "lucide-react";
 import { SettingsContainer } from "../components/ui/SettingsContainer";
 import { clamp } from "../utils";
+import clsx from "clsx";
 import { platform } from "@tauri-apps/plugin-os";
 import { Disclaimer } from "../components/ui/Disclaimer";
 
@@ -20,11 +21,31 @@ interface GameProps {
 export function GameView({ game, onClick, selected }: GameProps) {
     return (
         <div
-            className={`flex flex-row items-center gap-x-4 px-2 py-2 bg-mocha-base border-mocha-base border rounded-sm text-mocha-text ${selected ? "border-mocha-mauve bg-mocha-mauve/20" : ""} hover:border-mocha-mauve transition-all hover:cursor-pointer`}
+            className={clsx(
+                "relative w-full flex items-center gap-2 px-2 py-1 rounded-lg transition-colors hover:bg-mocha-surface0 cursor-pointer select-none",
+                selected && "bg-mocha-surface0 text-mocha-text",
+            )}
             onClick={onClick}
         >
-            <img className="w-8 h-8" src={game.icon ?? ""} />
-            <p className="truncate text-md flex-1">{game.name}</p>
+            {selected && (
+                <div className="absolute top-0 left-0 w-1 h-full bg-mocha-mauve rounded-none" />
+            )}
+
+            <div className="flex items-center gap-2 min-w-0 truncate">
+                {game.icon ? (
+                    <img
+                        src={game.icon}
+                        alt={game.name}
+                        className="w-4 h-4 rounded-sm bg-mocha-surface0 object-cover shrink-0"
+                    />
+                ) : (
+                    <div className="w-4 h-4 rounded-sm bg-mocha-surface0" />
+                )}
+
+                <p className={clsx("truncate", selected ? "font-medium" : "text-mocha-subtext0")}>
+                    {game.name}
+                </p>
+            </div>
         </div>
     );
 }
@@ -94,13 +115,20 @@ export default function GameTab() {
     // update preferences
     useEffect(getPreferences, [chosenGame]);
 
+    const query = searchQuery.trim().toLowerCase();
+    const filteredGames = supportedGames.filter(
+        (game) =>
+            `${game.name} ${game.executables.join(" ")}`.toLowerCase().includes(query),
+    );
+
     return (
-        <div className="bg-mocha-mantle w-full h-screen">
-            <div className="px-10 py-8 h-full flex flex-col overflow-hidden">
-                <div className="flex flex-row justify-between items-center mb-4">
-                    <h2 className="text-3xl font-semibold text-mocha-text mb-4">
+        <div className="relative bg-mocha-mantle w-full h-full flex flex-col">
+            <div className="flex flex-col flex-1 min-w-0 min-h-0">
+                <div className="flex items-center justify-between gap-x-3 px-6 py-2.5 bg-mocha-base border-b border-mocha-surface0 shrink-0">
+                    <h2 className="text-xl font-semibold text-mocha-text">
                         Supported games
                     </h2>
+
                     <button
                         onClick={() => {
                             const new_game: DetectedGame = {
@@ -126,56 +154,51 @@ export default function GameTab() {
                                 });
                             });
                         }}
-                        className="bg-mocha-mauve hover:bg-mocha-mauve/80 transition-colors rounded-md py-2 px-4 font-semibold text-mocha-base items-center flex flex-row gap-x-2"
+                        className="flex items-center gap-x-2 px-3 py-2 rounded-md bg-mocha-base text-mocha-text font-medium hover:bg-mocha-surface0 border border-mocha-surface0 transition-colors shrink-0"
                     >
                         <Plus className="w-4 h-4" />
                         <p>New game</p>
                     </button>
                 </div>
-                <div className="flex flex-row flex-1 min-h-0 w-full pr">
-                    <div className="flex flex-col min-w-1/3 max-w-1/3 gap-y-4 overflow-x-hidden">
-                        <div className="flex items-center gap-2 px-4 bg-mocha-base max-w-full rounded-lg">
-                            <Search className="h-4 w-4 text-mocha-text shrink-0" />
+                <div className="flex flex-row flex-1 min-h-0">
+                    <div className="w-72 shrink-0 flex flex-col bg-mocha-base border-r border-mocha-surface0 px-4 py-3 gap-y-1">
+                        <div className="relative flex items-center w-full shrink-0">
                             <Input
                                 type="text"
+                                placeholder={"Search"}
+                                className="w-full h-9 rounded-md pl-7 py-3"
                                 value={searchQuery}
-                                placeholder="Search..."
                                 onChange={(value) => setSearchQuery(value)}
-                                className="flex-1 focus:border-none border-none rounded-sm"
+                            />
+
+                            <Search
+                                className="absolute left-2 inset-y-auto w-4 h-4 text-mocha-overlay1 pointer-events-none"
                             />
                         </div>
-                        <div className="flex flex-col gap-y-2 overflow-y-auto pr-4">
-                            {supportedGames
-                                .filter(
-                                    (game) =>
-                                        game.name
-                                            .toLowerCase()
-                                            .includes(searchQuery) ||
-                                        game.executables.filter((exe) =>
-                                            exe
-                                                .toLowerCase()
-                                                .includes(searchQuery),
-                                        ).length > 0,
-                                )
-                                .map((game) => (
-                                    <GameView
-                                        key={game.name}
-                                        game={game}
-                                        selected={
-                                            chosenGame != null &&
-                                            chosenGame == game
-                                        }
-                                        onClick={() => {
-                                            setChosenGame(game);
-                                            setModifiedGame(game);
-                                        }}
-                                    />
-                                ))}
+
+                        <div className="flex flex-col flex-1 min-h-0 overflow-y-auto gap-y-1">
+                            {filteredGames.length === 0 && (
+                                <p className="text-sm text-mocha-overlay2 py-4">
+                                    No games match this search
+                                </p>
+                            )}
+
+                            {filteredGames.map((game) => (
+                                <GameView
+                                    key={game.name}
+                                    game={game}
+                                    selected={chosenGame?.name === game.name}
+                                    onClick={() => {
+                                        setChosenGame(game);
+                                        setModifiedGame(game);
+                                    }}
+                                />
+                            ))}
                         </div>
                     </div>
 
                     {modifiedGame != null && (
-                        <div className="flex flex-col min-w-2/3 max-w-2/3 text-mocha-text px-6 py-4 gap-y-4 overflow-y-auto ml-4 bg-mocha-base/20 rounded-xl">
+                        <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-y-scroll px-6 pt-4 gap-y-4">
                             <div className="flex flex-row items-center justify-between">
                                 <div className="flex flex-row items-center gap-x-4 text-mocha-text">
                                     <img
@@ -189,14 +212,14 @@ export default function GameTab() {
                                 <div className="flex flex-row gap-x-2">
                                     <button
                                         onClick={() => editGame()}
-                                        className="bg-mocha-mauve hover:bg-mocha-mauve/80 transition-colors rounded-md p-2 text-mocha-base flex items-center justify-center"
+                                        className="flex items-center justify-center p-2 rounded-sm border border-mocha-surface0 bg-mocha-base text-mocha-green hover:bg-mocha-green/10 transition-colors"
                                     >
                                         <Save className="w-4 h-4" />
                                     </button>
 
                                     <button
                                         onClick={() => deleteGame()}
-                                        className="bg-mocha-red hover:bg-mocha-red/80 transition-colors rounded-md p-2 text-mocha-base flex items-center justify-center"
+                                        className="flex items-center justify-center p-2 rounded-sm border border-mocha-surface0 bg-mocha-base text-mocha-red hover:bg-mocha-red/10 transition-colors"
                                     >
                                         <Trash className="w-4 h-4" />
                                     </button>
@@ -235,7 +258,7 @@ export default function GameTab() {
                                         <button
                                             onClick={() =>
                                                 setPickerOpen(!pickerOpen)}
-                                            className={`rounded-md p-2 flex items-center justify-center transition-colors bg-mocha-mauve hover:bg-mocha-mauve/80 text-mocha-base`}
+                                            className="flex items-center justify-center p-2 rounded-sm bg-mocha-base text-mocha-mauve hover:bg-mocha-surface0 transition-colors"
                                             title="Fetch icon from SteamGridDB"
                                         >
                                             <Sparkles className="w-4 h-4" />
@@ -323,7 +346,7 @@ export default function GameTab() {
                                                                 updated,
                                                             );
                                                         }}
-                                                        className="text-red-400 hover:text-red-500 px-2"
+                                                        className="flex items-center text-mocha-red hover:bg-mocha-red/10 p-2 rounded-sm transition-colors"
                                                     >
                                                         <Trash className="w-4 h-4" />
                                                     </button>
@@ -404,7 +427,7 @@ export default function GameTab() {
                                                                         updated,
                                                                     );
                                                                 }}
-                                                                className="text-red-400 hover:text-red-500 px-2"
+                                                                className="flex items-center text-mocha-red hover:bg-mocha-red/10 px-2 rounded-sm transition-colors"
                                                             >
                                                                 <Trash className="w-4 h-4" />
                                                             </button>

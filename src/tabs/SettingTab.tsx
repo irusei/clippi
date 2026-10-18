@@ -92,12 +92,14 @@ export default function SettingTab() {
     if (!settings) return <div className="p-8 text-mocha-text">Loading...</div>;
 
     return (
-        <div className="bg-mocha-mantle w-full h-full">
-            <div className="px-10 py-8 h-full flex flex-col gap-8 overflow-y-auto">
-                <h2 className="text-3xl font-semibold text-mocha-text">
+        <div className="relative bg-mocha-mantle w-full h-full flex flex-col">
+            <div className="flex items-center justify-between gap-x-3 px-6 py-4 bg-mocha-base border-b border-mocha-surface0 shrink-0">
+                <h2 className="text-xl font-semibold text-mocha-text">
                     Settings
                 </h2>
+            </div>
 
+            <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-y-scroll px-6 pt-4 gap-8">
                 <section className="flex flex-col gap-4">
                     <h3 className="text-xs font-medium text-mocha-overlay2 uppercase tracking-wider">
                         Output
