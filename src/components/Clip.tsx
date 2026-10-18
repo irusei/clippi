@@ -8,6 +8,7 @@ import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import Input from "./ui/Input";
 import { confirm } from "@tauri-apps/plugin-dialog";
 import clsx from "clsx";
+import { startDrag } from "@crabnebula/tauri-plugin-drag";
 
 interface ClipProps {
     clip: VodClip;
@@ -45,6 +46,7 @@ export default function Clip({ clip, onSelect, isSelected }: ClipProps) {
                 isSelected ? "ring-mocha-mauve ring-2" : "",
             )}
             onClick={onSelect}
+            onDragStart={() => startDrag({ item: [clip.path], icon: clip.thumbnail })}
         >
             <div className="relative w-full aspect-video bg-mocha-surface0 rounded-md overflow-hidden group shrink-0">
                 <img

@@ -9,6 +9,7 @@
         "os:default",
         "dialog:default",
         "clipboard-manager:allow-write-text",
-        "log:default"
+        "log:default",
+        "drag:default"
     ]
 }
