@@ -59,7 +59,7 @@ export default function Clip({ clip, onSelect, isSelected }: ClipProps) {
               startDrag({ item: [clip.path], icon: clip.thumbnail })
             }}
         >
-            <div className="relative w-full aspect-video bg-mocha-surface0 rounded-md overflow-hidden group shrink-0">
+            <div className="relative w-full aspect-video bg-mocha-surface0 overflow-hidden group shrink-0">
                 <img
                     src={convertFileSrc(clip.thumbnail)}
                     alt={clip.title}

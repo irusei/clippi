@@ -43,7 +43,7 @@ export default function ClipGrid({
                         className="flex flex-col gap-y-3 py-3"
                     >
                         <div
-                            className="flex items-center gap-x-2 transition-colors rounded-lg hover:bg-mocha-surface0 cursor-pointer"
+                            className="flex items-center gap-x-2 transition-colors rounded-sm hover:bg-mocha-surface0 cursor-pointer"
                             onClick={() =>
                                 setSearch(
                                     setCollapsedDays(
@@ -82,7 +82,7 @@ export default function ClipGrid({
                         </div>
 
                         {!collapsed && (
-                            <div className="flex flex-row flex-wrap gap-3">
+                            <div className="flex flex-row flex-wrap gap-y-6 gap-x-3">
                                 {section.tiles.map(({ clip, index: tileIndex }) => (
                                     <Clip
                                         key={clip.id}
