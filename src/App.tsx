@@ -87,7 +87,7 @@ function StatusBar({ currentGame }: StatusBarProps) {
             ) : (
                 <>
                     <p className="text-sm text-mocha-overlay2">
-                        Nothing is recording
+                        Nothing is being recorded
                     </p>
                     <div className="h-2 w-2 rounded-full bg-mocha-surface2" />
                 </>
