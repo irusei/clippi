@@ -465,7 +465,7 @@ export default function GameTab() {
 
                                         {platform() === "windows" && (
                                             <>
-                                                <Disclaimer 
+                                                <Disclaimer
                                                     title="Width/Height Override"
                                                     description="If you're using a custom resolution for this game, make sure to set it below so clippi can properly capture the game"
                                                 />

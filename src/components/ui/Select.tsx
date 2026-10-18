@@ -101,7 +101,7 @@ export function Select({
         >
             <div
                 className={clsx(
-                    "w-full flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all",
+                    "w-full flex border border-mocha-surface0 items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all",
                     disabled
                         ? "opacity-50 pointer-events-none outline-none"
                         : "hover:border-mocha-mauve focus-within:ring-1 focus-within:ring-mocha-mauve/50",
