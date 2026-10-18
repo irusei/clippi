@@ -182,14 +182,14 @@ export default function Clip({ clip, onSelect, isSelected }: ClipProps) {
                     />
                 ) : (
                     <>
-                        <p className="truncate text-mocha-text font-bold">
+                        <p className="truncate text-mocha-text font-semibold">
                             {clip.title}
                         </p>
                     </>
                 )}
             </div>
 
-            <div className="flex items-center flex-wrap gap-x-1 pt-1 text-xs text-mocha-overlay1">
+            <div className="flex items-center flex-wrap gap-x-1 pb-1 text-xs text-mocha-overlay1">
                 {clip.game.icon && (
                     <img src={clip.game.icon} className="w-4 h-4 shrink-0" />
                 )}
