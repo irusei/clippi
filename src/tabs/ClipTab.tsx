@@ -1,33 +1,27 @@
 import { useEffect, useState } from "react";
-import { DetectedGame, Settings, StorageInfo, VodClip } from "../types";
+import { ClipSearch, Settings, StorageInfo, VodClip } from "../types";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import Clip from "../components/Clip";
+import ClipGrid from "../components/clips/ClipGrid";
 import ClipViewer from "../components/ClipViewer";
-import { FilterMenu } from "../components/FilterMenu";
-import { filterClips } from "../utils/filterClips";
-import { FilterOptions } from "../types";
-import { Select } from "../components/ui/Select";
-import { isOverStorageLimit } from "../utils";
-import { AlertCircle, Trash2, Star, X } from "lucide-react";
+import FiltersSidebar from "../components/clips/FiltersSidebar";
+import {
+    filterClips,
+    getUniqueGames,
+    groupByDay,
+    sortClips,
+} from "../utils/filterClips";
+import Input from "../components/ui/Input";
+import { AlertCircle, SearchIcon, Trash2, X } from "lucide-react";
 import { confirm } from "@tauri-apps/plugin-dialog";
+import { isOverStorageLimit } from "../utils";
+import { Disclaimer } from "../components/ui/Disclaimer";
 
-function getSortedUniqueGames(clips: VodClip[]): [DetectedGame, number][] {
-    let sortedGames: Map<string, [DetectedGame, number]> = new Map();
-
-    clips.forEach((clip: VodClip) => {
-        if (sortedGames.has(clip.game.name)) {
-            const indexed = sortedGames.get(clip.game.name)!;
-            sortedGames.set(clip.game.name, [indexed[0], indexed[1] + 1]);
-        } else {
-            sortedGames.set(clip.game.name, [clip.game, 1]);
-        }
-    });
-
-    return Array.from(sortedGames.values()).sort((a, b) => b[1] - a[1]);
+interface ClipTabProps {
+    onClipEditor: (open: boolean) => void;
 }
 
-export default function ClipTab() {
+export default function ClipTab({ onClipEditor }: ClipTabProps) {
     const [clips, setClips] = useState<VodClip[]>([]);
     const [selectedClip, setSelectedClip] = useState<VodClip | null>(null);
     const [selectedClipIds, setSelectedClipIds] = useState<Set<string>>(
@@ -36,14 +30,18 @@ export default function ClipTab() {
     const [lastSelectedClipId, setLastSelectedClipId] = useState<string | null>(
         null,
     );
-    const [uniqueGames, setUniqueGames] = useState<[DetectedGame, number][]>(
-        [],
-    );
-    const [selectedGameName, setSelectedGameName] = useState<string>("");
-    const [filterOptions, setFilterOptions] = useState<FilterOptions>({
-        type: "",
+    // hide the status bar when a clip is opened in the editor
+    useEffect(() => {
+        onClipEditor(selectedClip != null);
+    }, [selectedClip]);
+
+    const [search, setSearch] = useState<ClipSearch>({
+        search: "",
+        gameName: "",
+        favoritedOnly: false,
+        facets: {},
+        collapsedDayKeys: [],
     });
-    const [favoritedOnly, setFavoritedOnly] = useState(false);
     const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
     const [maxStorageLimit, setMaxStorageLimit] = useState<string>("unlimited");
 
@@ -64,19 +62,17 @@ export default function ClipTab() {
         });
     }
 
+    const visible = sortClips(filterClips(clips, search));
+    const groups = groupByDay(visible);
+    const games = getUniqueGames(clips);
+
     function handleClipClick(
         clip: VodClip,
         event: React.MouseEvent,
         index: number,
     ) {
-        const filteredClips = filterClips(
-            clips,
-            selectedGameName,
-            filterOptions,
-        );
-
         if (event.shiftKey && lastSelectedClipId != null) {
-            const lastIdx = filteredClips.findIndex(
+            const lastIdx = visible.findIndex(
                 (c) => c.id === lastSelectedClipId,
             );
             if (lastIdx !== -1) {
@@ -84,7 +80,7 @@ export default function ClipTab() {
                 const end = Math.max(lastIdx, index);
                 const newSelected = new Set(selectedClipIds);
                 for (let i = start; i <= end; i++) {
-                    newSelected.add(filteredClips[i].id);
+                    newSelected.add(visible[i].id);
                 }
                 setSelectedClipIds(newSelected);
             }
@@ -103,11 +99,13 @@ export default function ClipTab() {
     }
 
     async function handleDeleteSelected() {
-        // process only the favorited clips
-        let clipsToDelete = [...selectedClipIds].map((clip_id) => clips.find((c) => c.id === clip_id)).filter((clip) => clip && !clip.favorited);
+        let clipsToDelete = [...selectedClipIds]
+            .map((clip_id) => clips.find((c) => c.id === clip_id))
+            .filter((clip) => clip && !clip.favorited);
 
         const confirmed = await confirm(
-            'Only non-favorited clips will be deleted.', `Delete ${clipsToDelete.length} clip${clipsToDelete.length > 1 ? "s" : ""}?`,
+            "Only non-favorited clips will be deleted.",
+            `Delete ${clipsToDelete.length} clip${clipsToDelete.length > 1 ? "s" : ""}?`,
         );
         if (!confirmed) return;
 
@@ -118,11 +116,7 @@ export default function ClipTab() {
         setSelectedClipIds(new Set());
     }
 
-    // set and update unique games for filtering
     useEffect(() => {
-        setUniqueGames(getSortedUniqueGames(clips));
-
-        // update storage limit in case settings change
         const ul1 = listen("settings_updated", () => {
             invoke("get_storage_info").then((res) => {
                 setStorageInfo(res as StorageInfo);
@@ -144,7 +138,7 @@ export default function ClipTab() {
         return () => {
             ul1.then((ul) => ul());
         };
-    }, [clips]);
+    }, []);
 
     useEffect(() => {
         const ul1 = listen("set_clips", (event) => {
@@ -167,160 +161,105 @@ export default function ClipTab() {
         };
     }, []);
 
-    const filteredClips = filterClips(
-        clips,
-        selectedGameName,
-        filterOptions,
-        favoritedOnly,
-    );
-
     return (
-        <div className="bg-mocha-mantle w-full h-full">
+        <div className="relative bg-mocha-mantle w-full h-full flex flex-col">
             {selectedClip === null && (
                 <>
-                    <div className="px-10 py-8 overflow-y-scroll h-full flex flex-col gap-y-2">
-                        <div className="flex flex-row gap-x-3 items-center">
-                            <h2 className="text-3xl font-semibold text-mocha-text mb-2">
-                                Your clips
-                            </h2>
-                        </div>
-                        <label className="text-sm font-medium text-mocha-overlay2">
-                            Filter
-                        </label>
-                        <div className="flex flex-row gap-x-3 items-center w-full">
-                            <Select
-                                className="w-1/4 bg-mocha-base"
-                                value={selectedGameName}
-                                placeholderValue={"Filter games..."}
-                                selectedLabel={
-                                    selectedGameName
-                                        ? (() => {
-                                              const game = uniqueGames.find(
-                                                  ([g]) =>
-                                                      g.name ===
-                                                      selectedGameName,
-                                              );
-                                              return game ? (
-                                                  <>
-                                                      <img
-                                                          className="w-5 h-5"
-                                                          src={
-                                                              game[0].icon ?? ""
-                                                          }
-                                                          alt={game[0].name}
-                                                      />
-                                                      <p className="text-mocha-text truncate">
-                                                          {game[0].name}
-                                                      </p>
-                                                  </>
-                                              ) : null;
-                                          })()
-                                        : undefined
-                                }
-                                onChange={(val) =>
-                                    setSelectedGameName(
-                                        selectedGameName === val ? "" : val,
-                                    )
-                                }
-                            >
-                                {uniqueGames.map(([game, count]) => [
-                                    game.name,
-                                    <div className="flex flex-row items-center space-x-2">
-                                        <img
-                                            className="w-5 h-5"
-                                            src={game.icon ?? ""}
-                                            alt={game.name}
-                                        />
+                    <div className="flex items-center gap-x-3 px-6 py-3 bg-mocha-base border-b border-mocha-surface0 shrink-0">
+                        <h2 className="text-xl font-semibold text-mocha-text">
+                            Your clips
+                        </h2>
 
-                                        <p className="text-mocha-text truncate">
-                                            {game.name}
-                                        </p>
-
-                                        <p className="text-mocha-overlay2">
-                                            {count}
-                                        </p>
-                                    </div>,
-                                ])}
-                            </Select>
-                            <FilterMenu
-                                gameName={selectedGameName}
-                                filterOptions={filterOptions}
-                                setFilterOptions={setFilterOptions}
-                                clips={clips}
+                        <div className="relative flex items-center w-1/6 min-w-0">
+                            <Input
+                                type="text"
+                                placeholder={"Search"}
+                                className="w-full h-9 rounded-md pl-7 py-3"
+                                value={search.search}
+                                onChange={(value) =>
+                                    setSearch({ ...search, search: value })
+                                }
                             />
-                            <button
-                                className={`flex items-center gap-1 px-3 py-2 text-sm rounded-lg font-medium transition-colors ${
-                                    favoritedOnly
-                                        ? "bg-mocha-yellow/20 text-mocha-yellow"
-                                        : "text-mocha-overlay2 hover:bg-mocha-surface0"
-                                }`}
-                                onClick={() => setFavoritedOnly(!favoritedOnly)}
-                            >
-                                <Star
-                                    className={`w-4 h-4 ${favoritedOnly ? "fill-mocha-yellow" : ""}`}
-                                />
-                                <p>Favorited</p>
-                            </button>
-                        </div>
 
-                        {isStorageLimitReached && (
-                            <div className="flex items-center gap-3 px-4 py-3 border border-mocha-red rounded-lg">
-                                <AlertCircle className="w-5 h-5 text-mocha-red" />
-                                <div>
-                                    <p className="text-sm font-medium text-mocha-red">
-                                        Storage limit reached
-                                    </p>
-                                    <p className="text-xs text-mocha-red">
-                                        You cannot record clips until you free
-                                        up space or increase your storage limit
-                                        in settings.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        {selectedClipIds.size > 0 && (
-                            <div className="flex items-center justify-between">
-                                <p className="text-sm text-mocha-overlay1 py-2 font-medium">
-                                    {selectedClipIds.size} clip
-                                    {selectedClipIds.size !== 1 ? "s" : ""}{" "}
-                                    selected
-                                </p>
-                                <div className="flex flex-row">
-                                    <button
-                                        className="flex items-center gap-2 px-3 py-2 text-sm text-mocha-overlay2 hover:bg-mocha-overlay2/10 transition-colors rounded-lg font-medium"
-                                        onClick={() => {
-                                            setSelectedClipIds(new Set());
-                                            setLastSelectedClipId(null);
-                                        }}
-                                    >
-                                        <X className="w-4 h-4" />
-                                        Deselect all
-                                    </button>
-                                    <button
-                                        className="flex items-center gap-2 px-3 py-2 text-sm text-mocha-red hover:bg-mocha-red/10 transition-colors rounded-lg font-medium"
-                                        onClick={handleDeleteSelected}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className={"flex flex-col gap-3"}>
-                            {filteredClips.map((clip, index) => (
-                                <Clip
-                                    key={clip.id}
-                                    clip={clip}
-                                    isSelected={selectedClipIds.has(clip.id)}
-                                    onSelect={(e) =>
-                                        handleClipClick(clip, e, index)
-                                    }
-                                />
-                            ))}
+                            <SearchIcon
+                                className="absolute left-2 inset-y-auto w-4 h-4 text-mocha-overlay1 pointer-events-none"
+                            />
                         </div>
                     </div>
+
+                    <div className="flex flex-row flex-1 min-h-0">
+                        <FiltersSidebar
+                            clips={clips}
+                            games={games}
+                            search={search}
+                            setSearch={setSearch}
+                        />
+
+                        <div className="flex-1 min-w-0 min-h-0 overflow-y-scroll px-6 pt-4 pb-14 flex flex-col">
+                            {isStorageLimitReached && (
+                                <div className="flex items-center gap-3 px-4 py-3 border border-mocha-red rounded-lg">
+                                    <AlertCircle className="w-5 h-5 text-mocha-red" />
+                                    <div>
+                                        <p className="text-sm font-medium text-mocha-red">
+                                            Storage limit reached
+                                        </p>
+                                        <p className="text-xs text-mocha-red/80">
+                                            You cannot record clips until you free
+                                            up space or increase your storage limit
+                                            in settings.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {visible.length === 0 && (
+                                <Disclaimer
+                                    title="No clips found"
+                                    description="No clips were found for this query."
+                                />
+                            )}
+
+                            <ClipGrid
+                                groups={groups}
+                                selectedIds={selectedClipIds}
+                                search={search}
+                                setSearch={setSearch}
+                                onSelect={(clip, event, index) =>
+                                    handleClipClick(clip, event, index)
+                                }
+                            />
+                        </div>
+                    </div>
+
+                    {selectedClipIds.size > 0 && (
+                        <div className="absolute left-72 right-0 bottom-0 z-20 flex items-center justify-between gap-3 px-4 py-2 min-h-10 bg-mocha-base border-t border-mocha-surface0">
+                            <p className="text-sm text-mocha-overlay1 font-medium">
+                                {selectedClipIds.size} clip
+                                {selectedClipIds.size !== 1 ? "s" : ""}{" "}
+                                selected
+                            </p>
+
+                            <div className="flex flex-row gap-x-2">
+                                <button
+                                    className="flex items-center gap-2 px-3 py-2 text-sm text-mocha-overlay2 hover:bg-mocha-overlay2/10 transition-colors rounded-lg font-medium"
+                                    onClick={() => {
+                                        setSelectedClipIds(new Set());
+                                        setLastSelectedClipId(null);
+                                    }}
+                                >
+                                    <X className="w-4 h-4" />
+                                    Deselect all
+                                </button>
+                                <button
+                                    className="flex items-center gap-2 px-3 py-2 text-sm text-mocha-red hover:bg-mocha-red/10 transition-colors rounded-lg font-medium"
+                                    onClick={handleDeleteSelected}
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
 

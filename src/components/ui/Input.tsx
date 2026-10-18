@@ -28,7 +28,7 @@ export default function Input({
             ref={ref ?? null}
             type={type}
             className={clsx(
-                "bg-mocha-base text-mocha-text p-2 rounded-lg border border-transparent outline-none transition-colors focus:border-mocha-mauve",
+                "bg-mocha-base text-mocha-text p-2 rounded-lg border border-mocha-surface0 outline-none transition-colors focus:border-mocha-mauve",
                 "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
                 className,
             )}

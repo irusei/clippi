@@ -63,17 +63,19 @@ export interface Settings {
     steamgriddb_api_key?: string | null;
 }
 
-export type BaseFilter = {
-    type: string;
-};
+export interface ClipSearch {
+    search: string;
+    gameName: string;
+    favoritedOnly: boolean;
+    facets: Record<string, string>;
+    collapsedDayKeys: string[];
+}
 
-export type LeagueFilter = BaseFilter & {
-    type: "league";
-    championName?: string;
-    positionName?: string;
-};
-
-export type FilterOptions = BaseFilter | LeagueFilter;
+export interface DateGroup {
+    dayKey: string;
+    heading: string;
+    clips: VodClip[];
+}
 
 export interface StorageInfo {
     clipping_folder: string;

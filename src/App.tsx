@@ -99,6 +99,7 @@ function StatusBar({ currentGame }: StatusBarProps) {
 export default function App() {
     const [currentTab, setCurrentTab] = useState<Tab>(Tab.Clips);
     const [currentGame, setCurrentGame] = useState<DetectedGame | null>(null);
+    const [clipEditorOpen, setClipEditorOpen] = useState(false);
 
     function getCurrentGame() {
         invoke("get_current_game").then((res) => {
@@ -131,7 +132,7 @@ export default function App() {
                         : "hidden"
                 }
             >
-                <ClipTab />
+                <ClipTab onClipEditor={setClipEditorOpen} />
             </div>
 
             <div
@@ -148,7 +149,7 @@ export default function App() {
                 <SettingTab />
             </div>
 
-            <StatusBar currentGame={currentGame} />
+            {!clipEditorOpen && <StatusBar currentGame={currentGame} />}
         </div>
     );
 }
