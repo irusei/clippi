@@ -176,6 +176,32 @@ export default function FiltersSidebar({
                 }
             />
 
+            <BadgeRow
+                selected={search.favoritedOnly}
+                label={"Favorited"}
+                count={favoritedCount}
+                icon={() => (
+                    <Star
+                        className={clsx(
+                            "w-4 h-4",
+                            search.favoritedOnly
+                                ? "fill-mocha-yellow text-mocha-yellow"
+                                : "text-mocha-overlay1",
+                        )}
+                    />
+                )}
+                onClick={() =>
+                    setSearch({
+                        ...search,
+                        favoritedOnly: !search.favoritedOnly,
+                    })
+                }
+            />
+
+            <p className="text-xs text-mocha-overlay1 font-medium py-1">
+                Games
+            </p>
+
             {games.map(([game, count]) => (
                 <div key={game.name} className="flex flex-col gap-y-1">
                     <BadgeRow
@@ -225,28 +251,6 @@ export default function FiltersSidebar({
                         ))}
                 </div>
             ))}
-
-            <BadgeRow
-                selected={search.favoritedOnly}
-                label={"Favorited"}
-                count={favoritedCount}
-                icon={() => (
-                    <Star
-                        className={clsx(
-                            "w-4 h-4",
-                            search.favoritedOnly
-                                ? "fill-mocha-yellow text-mocha-yellow"
-                                : "text-mocha-overlay1",
-                        )}
-                    />
-                )}
-                onClick={() =>
-                    setSearch({
-                        ...search,
-                        favoritedOnly: !search.favoritedOnly,
-                    })
-                }
-            />
         </div>
     );
 }
