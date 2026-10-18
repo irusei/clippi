@@ -9,6 +9,7 @@ import { Plus, Save, Search, Trash, Sparkles } from "lucide-react";
 import { SettingsContainer } from "../components/ui/SettingsContainer";
 import { clamp } from "../utils";
 import { platform } from "@tauri-apps/plugin-os";
+import { Disclaimer } from "../components/ui/Disclaimer";
 
 interface GameProps {
     game: DetectedGame;
@@ -464,6 +465,10 @@ export default function GameTab() {
 
                                         {platform() === "windows" && (
                                             <>
+                                                <Disclaimer 
+                                                    title="Width/Height Override"
+                                                    description="If you're using a custom resolution for this game, make sure to set it below so clippi can properly capture the game"
+                                                />
                                                 <SettingsContainer
                                                     title="Width Override"
                                                     description="Override width resolution for this game"
