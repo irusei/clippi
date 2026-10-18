@@ -165,7 +165,7 @@ export default function ClipTab({ onClipEditor }: ClipTabProps) {
         <div className="relative bg-mocha-mantle w-full h-full flex flex-col">
             {selectedClip === null && (
                 <>
-                    <div className="flex items-center gap-x-3 px-6 py-3 bg-mocha-base border-b border-mocha-surface0 shrink-0">
+                    <div className="flex items-center gap-x-3 px-6 py-3 bg-mocha-base border-b border-mocha-surface0 justify-between shrink-0">
                         <h2 className="text-xl font-semibold text-mocha-text">
                             Your clips
                         </h2>
