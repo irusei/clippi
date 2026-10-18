@@ -9,6 +9,7 @@ import Input from "./ui/Input";
 import { confirm } from "@tauri-apps/plugin-dialog";
 import clsx from "clsx";
 import { startDrag } from "@crabnebula/tauri-plugin-drag";
+import { platform } from "@tauri-apps/plugin-os";
 
 interface ClipProps {
     clip: VodClip;
@@ -46,7 +47,17 @@ export default function Clip({ clip, onSelect, isSelected }: ClipProps) {
                 isSelected ? "ring-mocha-mauve ring-2" : "",
             )}
             onClick={onSelect}
-            onDragStart={() => startDrag({ item: [clip.path], icon: clip.thumbnail })}
+            onDragStart={() => {
+              if (platform() === "windows" && clip.path.charCodeAt(0) >= 71) {
+                // this implementation of drag basically doesn't work, so when the external drive is located on a network share or a FUSE volume
+                // (https://github.com/crabnebula-dev/drag-rs/pull/101)
+                // it's going to panic on drag. i can't be bothered to add checking for a network share to avoid this implementation as it's most likely going to get fixed soon (i hope),
+                // so a clip folder above the drive letter G: (google drive) is going to block dragging from library into other apps. sorry.
+                return;
+              }
+
+              startDrag({ item: [clip.path], icon: clip.thumbnail })
+            }}
         >
             <div className="relative w-full aspect-video bg-mocha-surface0 rounded-md overflow-hidden group shrink-0">
                 <img
